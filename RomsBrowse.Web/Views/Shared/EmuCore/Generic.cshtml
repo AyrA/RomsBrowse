@@ -1,0 +1,19 @@
+﻿@model RomViewModel
+@{
+    var url = Url.Action("Get", "Rom", new { id = Model.Id });
+}
+
+<div style="width:640px;height:480px;max-width:100%">
+    <div id="game"></div>
+</div>
+
+<script type="text/javascript" data-rom-type="@Model.EmuType" data-rom-title="@Model.Title" data-rom-url="@url">
+    EJS_player = "#game";
+    EJS_core = document.currentScript.dataset.romType;
+    EJS_lightgun = false;
+    EJS_biosUrl = "";
+    EJS_gameUrl = document.currentScript.dataset.romUrl;
+    EJS_pathtodata = "/emulator/data";
+    EJS_gameName = document.currentScript.dataset.romTitle;
+</script>
+<script src="/emulator/data/loader.js"></script>
