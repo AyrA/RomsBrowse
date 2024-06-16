@@ -43,11 +43,20 @@ app.MapControllerRoute(
 //Run helpers
 SetThreadLanguage("de-ch");
 await MigrateAsync();
-await UpdateRomDirectory();
+//await UpdateRomDirectory();
+await InitDataFields();
 
 await app.RunAsync();
 
 // Helper
+
+async Task InitDataFields()
+{
+    using var scope = app.Services.CreateScope();
+    var menuService = app.Services.GetRequiredService<MainMenuService>();
+    var platformService = scope.ServiceProvider.GetRequiredService<PlatformService>();
+    menuService.SetMenuItems(await platformService.GetPlatforms(false));
+}
 
 async Task UpdateRomDirectory()
 {
