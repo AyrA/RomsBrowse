@@ -11,7 +11,7 @@ using RomsBrowse.Data;
 namespace RomsBrowse.Data.Migrations
 {
     [DbContext(typeof(RomsContext))]
-    [Migration("20240616134207_InitCreate")]
+    [Migration("20240616174207_InitCreate")]
     partial class InitCreate
     {
         /// <inheritdoc />
@@ -65,17 +65,26 @@ namespace RomsBrowse.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
                     b.Property<string>("FileName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
 
+                    b.Property<int>("PlatformId")
+                        .HasColumnType("int");
+
                     b.Property<byte[]>("Sha256")
+                        .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("varbinary(32)");
 
@@ -86,7 +95,25 @@ namespace RomsBrowse.Data.Migrations
 
                     b.HasIndex("FileName");
 
+                    b.HasIndex("PlatformId");
+
                     b.ToTable("RomFiles");
+                });
+
+            modelBuilder.Entity("RomsBrowse.Data.Models.RomFile", b =>
+                {
+                    b.HasOne("RomsBrowse.Data.Models.Platform", "Platform")
+                        .WithMany("Roms")
+                        .HasForeignKey("PlatformId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Platform");
+                });
+
+            modelBuilder.Entity("RomsBrowse.Data.Models.Platform", b =>
+                {
+                    b.Navigation("Roms");
                 });
 #pragma warning restore 612, 618
         }
