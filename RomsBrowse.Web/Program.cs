@@ -1,6 +1,7 @@
 using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
+using RomsBrowse.Web.Services;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,12 +40,21 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-await MigrateAsync();
+//Run helpers
 SetThreadLanguage("de-ch");
+await MigrateAsync();
+await UpdateRomDirectory();
 
 await app.RunAsync();
 
 // Helper
+
+async Task UpdateRomDirectory()
+{
+    using var scope = app.Services.CreateScope();
+    var rgs = scope.ServiceProvider.GetRequiredService<RomGatherService>();
+    await rgs.GatherRoms();
+}
 
 async Task MigrateAsync()
 {

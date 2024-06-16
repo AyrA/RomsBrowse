@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RomsBrowse.Common\RomsBrowse.Common.csproj" />
     <ProjectReference Include="..\RomsBrowse.Data\RomsBrowse.Data.csproj" />
   </ItemGroup>
 

@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RomsBrowse.Web", "RomsBrowse.Web\RomsBrowse.Web.csproj", "{C72682AC-1E4B-429F-8F37-70D46F7F2701}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomsBrowse.Web", "RomsBrowse.Web\RomsBrowse.Web.csproj", "{C72682AC-1E4B-429F-8F37-70D46F7F2701}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RomsBrowse.Data", "RomsBrowse.Data\RomsBrowse.Data.csproj", "{ABCA5A33-62D3-4ABF-9FAE-87459CC7F542}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomsBrowse.Data", "RomsBrowse.Data\RomsBrowse.Data.csproj", "{ABCA5A33-62D3-4ABF-9FAE-87459CC7F542}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RomsBrowse.Common", "RomsBrowse.Common\RomsBrowse.Common.csproj", "{2BC97735-F97D-455D-9486-057B4003998E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{ABCA5A33-62D3-4ABF-9FAE-87459CC7F542}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABCA5A33-62D3-4ABF-9FAE-87459CC7F542}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ABCA5A33-62D3-4ABF-9FAE-87459CC7F542}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BC97735-F97D-455D-9486-057B4003998E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BC97735-F97D-455D-9486-057B4003998E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BC97735-F97D-455D-9486-057B4003998E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BC97735-F97D-455D-9486-057B4003998E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
