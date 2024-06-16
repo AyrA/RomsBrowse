@@ -23,8 +23,8 @@ namespace RomsBrowse.Web.Services
 
         public async Task GatherRoms()
         {
-            var config = GetConfig().ToList();
-            var names = config.Select(m => m.ShortName).ToList();
+            var configs = GetConfig().ToList();
+            var names = configs.Select(m => m.ShortName).ToList();
             logger.LogInformation("Configured rom directories: {Dirs}", names);
             var platforms = await ctx.Platforms
                 .Include(m => m.Roms)
@@ -33,7 +33,7 @@ namespace RomsBrowse.Web.Services
 
             //Delete platforms that do not exist anymore
             var toDelete = platforms
-                .Where(m => names.Contains(m.ShortName))
+                .Where(m => !names.Contains(m.ShortName))
                 .ToList();
             if (toDelete.Count > 0)
             {
@@ -44,17 +44,18 @@ namespace RomsBrowse.Web.Services
             }
 
             //Add new platforms and update existing ones
-            foreach (var p in config)
+            foreach (var config in configs)
             {
-                if (!platforms.Any(m => m.ShortName.Equals(p.ShortName, StringComparison.InvariantCultureIgnoreCase)))
+                var match = platforms.FirstOrDefault(m => m.ShortName.Equals(config.ShortName, StringComparison.InvariantCultureIgnoreCase));
+                if (match == null)
                 {
-                    logger.LogInformation("Adding new platform: {Name}", p.DisplayName);
-                    await AddPlatform(p);
+                    logger.LogInformation("Adding new platform: {Name}", config.DisplayName);
+                    await AddPlatform(config);
                 }
                 else
                 {
-                    logger.LogInformation("Checking platform for updates: {Name}", p.DisplayName);
-                    await UpdatePlatform(p);
+                    logger.LogInformation("Checking platform for updates: {Name}", config.DisplayName);
+                    await UpdatePlatform(config, match);
                 }
             }
         }
@@ -73,6 +74,7 @@ namespace RomsBrowse.Web.Services
             foreach (var romFile in GetRomFiles(p))
             {
                 var rf = await UpdateRomInfoAsync(p, new(), romFile);
+                rf.Validate();
                 ctx.RomFiles.Add(rf);
             }
             return await ctx.SaveChangesAsync();
@@ -85,7 +87,7 @@ namespace RomsBrowse.Web.Services
                 f.Platform = p;
                 f.PlatformId = p.Id;
             }
-            f.FilePath = romFile[(GetRomPath(p).Length + 1)..];
+            f.FilePath = GetRomSubPath(GetRomPath(p), romFile);
             f.FileName = Path.GetFileName(romFile);
             f.DisplayName = Path.GetFileNameWithoutExtension(f.FileName);
             if (f.Size == 0 || FileSize(romFile) != f.Size)
@@ -98,6 +100,15 @@ namespace RomsBrowse.Web.Services
             return f;
         }
 
+        private static string GetRomSubPath(string rootPath, string romFile)
+        {
+            if (!romFile.StartsWith(rootPath + Path.DirectorySeparatorChar))
+            {
+                throw new ArgumentException($"Rom path '{romFile}' is not a subdirectory of '{rootPath}'");
+            }
+            return romFile[(rootPath.Length + 1)..];
+        }
+
         private static int FileSize(string file) => (int)new FileInfo(file).Length;
 
         private string GetRomPath(Platform p) => Path.Combine(rootDir, p.Folder);
@@ -107,11 +118,38 @@ namespace RomsBrowse.Web.Services
             return Directory.EnumerateFiles(Path.Combine(rootDir, p.Folder), "*.*", SearchOption.AllDirectories);
         }
 
-        private async Task<int> UpdatePlatform(RomDirConfig config)
+        private async Task<int> UpdatePlatform(RomDirConfig config, Platform p)
         {
-            throw new NotImplementedException();
-            //TODO
-            //return await ctx.SaveChangesAsync();
+            ctx.Platforms.Attach(p);
+            p.ShortName = config.ShortName;
+            p.DisplayName = config.DisplayName;
+            p.Folder = config.FolderName;
+
+            var pending = p.Roms.ToList();
+            var romPath = GetRomPath(p);
+            foreach (var romFile in GetRomFiles(p))
+            {
+                var subPath = GetRomSubPath(romPath, romFile);
+                var existing = pending.FirstOrDefault(m => m.FilePath == subPath);
+                if (existing != null)
+                {
+                    pending.Remove(existing);
+                    //Update existing ROM
+                    ctx.RomFiles.Attach(existing);
+                    await UpdateRomInfoAsync(p, existing, romFile);
+                    existing.Validate();
+                }
+                else
+                {
+                    //Add new ROM
+                    var rf = await UpdateRomInfoAsync(p, new(), romFile);
+                    rf.Validate();
+                    ctx.RomFiles.Add(rf);
+                }
+            }
+            //Delete ROMS that no longer exist
+            ctx.RomFiles.RemoveRange(pending);
+            return await ctx.SaveChangesAsync();
         }
 
         private async Task<int> DeleteOldPlatforms(IEnumerable<Platform> platforms)
