@@ -11,53 +11,98 @@ namespace RomsBrowse.Web.Services
     [AutoDIRegister(AutoDIType.Scoped)]
     public class RomGatherService(IConfiguration config, RomsContext ctx, ILogger<RomGatherService> logger)
     {
+        private static readonly SemaphoreSlim locker = new(1);
+        private static bool isScanningGlobal = false;
+
         private readonly string rootDir = Path.GetFullPath(config.GetValue<string>("RomDir")
             ?? throw new InvalidOperationException("'RomDir' not set"));
+
+        /// <summary>
+        /// Gets if a scan is currently ongoing
+        /// </summary>
+        public bool IsScanning => GetScanning();
+
+        /// <summary>
+        /// Scans for new, updated, and deleted ROMS
+        /// </summary>
+        /// <exception cref="InvalidOperationException">A scan is already ongoing</exception>
+        /// <remarks>
+        /// Only one scan can be used at a time.
+        /// Use <see cref="IsScanning"/> to determine if one is currently ongoing
+        /// </remarks>
+        public async Task GatherRoms()
+        {
+            if (!await locker.WaitAsync(TimeSpan.FromMilliseconds(100)))
+            {
+                throw new InvalidOperationException("ROMS are already being scanned");
+            }
+            SetScanning(true);
+            try
+            {
+                var configs = GetConfig().ToList();
+                var names = configs.Select(m => m.ShortName).ToList();
+                logger.LogInformation("Configured rom directories: {Dirs}", names);
+                var platforms = await ctx.Platforms
+                    .Include(m => m.Roms)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                //Delete platforms that do not exist anymore
+                var toDelete = platforms
+                    .Where(m => !names.Contains(m.ShortName))
+                    .ToList();
+                if (toDelete.Count > 0)
+                {
+                    logger.LogInformation("Deleting {Count} platforms", toDelete.Count);
+                    await DeleteOldPlatforms(toDelete);
+                    toDelete.ForEach(m => platforms.Remove(m));
+                    toDelete.ForEach(m => names.Remove(m.ShortName));
+                }
+
+                //Add new platforms and update existing ones
+                foreach (var config in configs)
+                {
+                    var match = platforms.FirstOrDefault(m => m.ShortName.Equals(config.ShortName, StringComparison.InvariantCultureIgnoreCase));
+                    if (match == null)
+                    {
+                        logger.LogInformation("Adding new platform: {Name}", config.DisplayName);
+                        await AddPlatform(config);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Checking platform for updates: {Name}", config.DisplayName);
+                        await UpdatePlatform(config, match);
+                    }
+                }
+            }
+            finally
+            {
+                SetScanning(false);
+                locker.Release();
+            }
+        }
+
+        private static bool GetScanning()
+        {
+            lock (locker)
+            {
+                return isScanningGlobal;
+            }
+        }
+
+        private static void SetScanning(bool value)
+        {
+            lock (locker)
+            {
+                isScanningGlobal = value;
+            }
+        }
 
         private RomDirConfig[] GetConfig()
         {
             return File
                 .ReadAllText(Path.Combine(rootDir, "config.json"))
                 .FromJsonRequired<RomDirConfig[]>();
-        }
-
-        public async Task GatherRoms()
-        {
-            var configs = GetConfig().ToList();
-            var names = configs.Select(m => m.ShortName).ToList();
-            logger.LogInformation("Configured rom directories: {Dirs}", names);
-            var platforms = await ctx.Platforms
-                .Include(m => m.Roms)
-                .AsNoTracking()
-                .ToListAsync();
-
-            //Delete platforms that do not exist anymore
-            var toDelete = platforms
-                .Where(m => !names.Contains(m.ShortName))
-                .ToList();
-            if (toDelete.Count > 0)
-            {
-                logger.LogInformation("Deleting {Count} platforms", toDelete.Count);
-                await DeleteOldPlatforms(toDelete);
-                toDelete.ForEach(m => platforms.Remove(m));
-                toDelete.ForEach(m => names.Remove(m.ShortName));
-            }
-
-            //Add new platforms and update existing ones
-            foreach (var config in configs)
-            {
-                var match = platforms.FirstOrDefault(m => m.ShortName.Equals(config.ShortName, StringComparison.InvariantCultureIgnoreCase));
-                if (match == null)
-                {
-                    logger.LogInformation("Adding new platform: {Name}", config.DisplayName);
-                    await AddPlatform(config);
-                }
-                else
-                {
-                    logger.LogInformation("Checking platform for updates: {Name}", config.DisplayName);
-                    await UpdatePlatform(config, match);
-                }
-            }
         }
 
         private async Task<int> AddPlatform(RomDirConfig config)
