@@ -59,7 +59,7 @@ namespace RomsBrowse.Data.Migrations
                 column: "FileName");
 
             migrationBuilder.Sql("CREATE FULLTEXT CATALOG RomsFullText AS DEFAULT", true);
-            migrationBuilder.Sql("CREATE FULLTEXT INDEX ON RomFiles(FileName) KEY INDEX PK_RomFiles", true);
+            migrationBuilder.Sql("CREATE FULLTEXT INDEX ON RomFiles(DisplayName) KEY INDEX PK_RomFiles", true);
         }
 
         /// <inheritdoc />
@@ -68,11 +68,8 @@ namespace RomsBrowse.Data.Migrations
             migrationBuilder.Sql("DROP FULLTEXT INDEX ON RomFiles", true);
             migrationBuilder.Sql("DROP FULLTEXT CATALOG RomsFullText", true);
 
-            migrationBuilder.DropTable(
-                name: "Platforms");
-
-            migrationBuilder.DropTable(
-                name: "RomFiles");
+            migrationBuilder.DropTable(name: "Platforms");
+            migrationBuilder.DropTable(name: "RomFiles");
         }
     }
 }
