@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RomsBrowse.Data;
 
@@ -10,9 +11,11 @@ using RomsBrowse.Data;
 namespace RomsBrowse.Data.Migrations
 {
     [DbContext(typeof(RomsContext))]
-    partial class RomsContextModelSnapshot : ModelSnapshot
+    [Migration("20240616141712_NavProp")]
+    partial class NavProp
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
