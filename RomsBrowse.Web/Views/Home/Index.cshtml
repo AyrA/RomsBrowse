@@ -3,13 +3,8 @@
 }
 
 <h1 class="display-4">ROM Browser</h1>
-<form method="post" asp-action="Search">
-    <div class="row">
-        <div class="col-5">
-            <div class="input-group">
-                <input type="search" required class="form-control" placeholder="Search terms" />
-                <input type="submit" class="btn btn-primary" value="Search" />
-            </div>
-        </div>
-    </div>
-</form>
+<p>
+    Select a platform from the menu above to browse all ROMs for that platform,
+    or use the search form below to look up specific roms
+</p>
+@await Html.PartialAsync("PartialSearchForm")

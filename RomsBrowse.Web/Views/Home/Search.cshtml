@@ -1,0 +1,45 @@
+﻿@model SearchResultViewModel
+@{
+    ViewData["Title"] = "ROM Search";
+
+    bool showPlatform = Model.SearchModel.Platform == null;
+}
+@await Html.PartialAsync("PartialSearchForm", Model.SearchModel)
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model.IsLimited)
+{
+    <div class="alert alert-info">
+        Found too many results.
+        The search was limited to @Model.Files.Length results
+    </div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            @if (showPlatform)
+            {
+                <th>Platform</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var rom in Model.Files)
+        {
+            <tr>
+                <td>
+                    <a asp-controller="Home" asp-action="ROM" asp-route-id="@rom.Id">@rom.DisplayName</a>
+                </td>
+                @if (showPlatform)
+                {
+                    <td>
+                        @rom.Platform.DisplayName
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>

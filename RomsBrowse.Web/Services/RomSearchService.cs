@@ -11,6 +11,8 @@ namespace RomsBrowse.Web.Services
     {
         private const int MaxResultCount = 100;
 
+        public int ResultLimit => MaxResultCount;
+
         public async Task<RomFile[]> Search(string terms)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(terms);
@@ -23,9 +25,11 @@ namespace RomsBrowse.Web.Services
                 .Include(m => m.Platform)
                 .Where(m => EF.Functions.Contains(m.DisplayName, terms))
                 .AsNoTracking()
-                .Take(MaxResultCount)
+                .OrderBy(m => m.DisplayName)
+                .Take(ResultLimit)
                 .ToArrayAsync();
         }
+
         public async Task<RomFile[]> Search(string terms, int platformId)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(terms);
@@ -37,8 +41,17 @@ namespace RomsBrowse.Web.Services
             return await ctx.RomFiles
                 .Where(m => m.PlatformId == platformId && EF.Functions.FreeText(m.DisplayName, terms))
                 .AsNoTracking()
-                .Take(MaxResultCount)
+                .OrderBy(m => m.DisplayName)
+                .Take(ResultLimit)
                 .ToArrayAsync();
+        }
+
+        public async Task<RomFile?> GetRom(int id)
+        {
+            return await ctx.RomFiles
+                .AsNoTracking()
+                .Include(m => m.Platform)
+                .FirstOrDefaultAsync(m => m.Id == id);
         }
 
         private static string ParseString(string term)
