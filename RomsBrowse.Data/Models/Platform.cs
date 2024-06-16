@@ -10,12 +10,17 @@ namespace RomsBrowse.Data.Models
     {
         [Key]
         public int Id { get; set; }
+
         [Required, StringLength(50)]
         public string DisplayName { get; set; }
+
         [Required, StringLength(20)]
         public string ShortName { get; set; }
+
         [Required]
         public string Folder { get; set; }
+
+        public virtual ICollection<RomFile> Roms { get; set; }
     }
 #nullable restore
 }
