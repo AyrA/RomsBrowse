@@ -15,4 +15,8 @@
     <Folder Include="Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RomsBrowse.Common\RomsBrowse.Common.csproj" />
+  </ItemGroup>
+
 </Project>
