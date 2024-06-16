@@ -18,6 +18,7 @@ namespace RomsBrowse.Data.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     DisplayName = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     ShortName = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    EmulatorType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     Folder = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
                 constraints: table =>

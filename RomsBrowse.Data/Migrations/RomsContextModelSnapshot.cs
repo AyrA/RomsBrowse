@@ -34,6 +34,11 @@ namespace RomsBrowse.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<string>("EmulatorType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("Folder")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");

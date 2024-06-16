@@ -11,7 +11,7 @@ using RomsBrowse.Data;
 namespace RomsBrowse.Data.Migrations
 {
     [DbContext(typeof(RomsContext))]
-    [Migration("20240616174207_InitCreate")]
+    [Migration("20240616232536_InitCreate")]
     partial class InitCreate
     {
         /// <inheritdoc />
@@ -36,6 +36,11 @@ namespace RomsBrowse.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("EmulatorType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Folder")
                         .IsRequired()
