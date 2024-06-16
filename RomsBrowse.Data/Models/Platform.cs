@@ -17,6 +17,9 @@ namespace RomsBrowse.Data.Models
         [Required, StringLength(20)]
         public string ShortName { get; set; }
 
+        [Required, StringLength(20)]
+        public string EmulatorType { get; set; }
+
         [Required]
         public string Folder { get; set; }
 
