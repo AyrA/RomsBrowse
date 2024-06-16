@@ -1,4 +1,4 @@
-namespace RomsBrowse.Web.Models
+namespace RomsBrowse.Web.ViewModels
 {
     public class ErrorViewModel
     {
