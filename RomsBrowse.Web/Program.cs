@@ -54,14 +54,7 @@ async Task UpdateRomDirectory()
     using var scope = app.Services.CreateScope();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     var rgs = scope.ServiceProvider.GetRequiredService<RomGatherService>();
-    var src = scope.ServiceProvider.GetRequiredService<RomSearchService>();
     await rgs.GatherRoms();
-    var result = await src.Search("Mario");
-    logger.LogInformation("Found {Count} entries", result.Length);
-    foreach (var entry in result)
-    {
-        logger.LogInformation("Name: {Name}", entry.DisplayName);
-    }
 }
 
 async Task MigrateAsync()
