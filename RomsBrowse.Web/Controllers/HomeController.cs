@@ -42,7 +42,7 @@ namespace RomsBrowse.Web.Controllers
             {
                 return NotFound();
             }
-            var rvm = new RomViewModel(rom.Platform.ShortName, rom);
+            var rvm = new RomViewModel(rom);
             return View(rvm);
         }
 

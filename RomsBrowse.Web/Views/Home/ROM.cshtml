@@ -1,3 +1,5 @@
 ﻿@model RomViewModel
-
-@await Html.PartialAsync($"Core/{Model.EmulatorCore}")
+@{
+    ViewData["Title"] = Model.Title;
+}
+@await Html.PartialAsync($"EmuCore/{Model.EmulatorView}", Model)

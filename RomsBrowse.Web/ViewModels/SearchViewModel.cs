@@ -10,10 +10,12 @@ namespace RomsBrowse.Web.ViewModels
         public string? Search { get; set; }
         public int? Platform { get; set; }
 
+#pragma warning disable CS8774
         [MemberNotNull(nameof(Search))]
         public void Validate()
         {
             ValidationTools.ValidatePublic(this);
         }
+#pragma warning restore CS8774
     }
 }

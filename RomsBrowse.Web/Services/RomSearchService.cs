@@ -7,9 +7,13 @@ using System.Text.RegularExpressions;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public partial class RomSearchService(RomsContext ctx)
+    public partial class RomSearchService(IConfiguration config, RomsContext ctx)
     {
         private const int MaxResultCount = 100;
+
+        private readonly string rootDir = Path.GetFullPath(config.GetValue<string>("RomDir")
+            ?? throw new InvalidOperationException("'RomDir' not set"));
+
 
         public int ResultLimit => MaxResultCount;
 
@@ -54,6 +58,16 @@ namespace RomsBrowse.Web.Services
                 .FirstOrDefaultAsync(m => m.Id == id);
         }
 
+        public async Task<string?> GetRomPath(int id)
+        {
+            var rom = await GetRom(id);
+            if (rom == null)
+            {
+                return null;
+            }
+            return Path.Combine(rootDir, rom.Platform.Folder, rom.FilePath);
+        }
+
         private static string ParseString(string term)
         {
             //Replace SQL search values with spaces
@@ -71,7 +85,6 @@ namespace RomsBrowse.Web.Services
 
             return term;
         }
-
 
         [GeneratedRegex(@"[&|~!]+")]
         private static partial Regex SqlReplacer();
