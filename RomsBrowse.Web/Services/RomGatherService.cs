@@ -21,10 +21,12 @@ namespace RomsBrowse.Web.Services
 
         public async Task GatherRoms()
         {
+            var config = GetConfig();
             var platforms = await ctx.Platforms
                 .Include(m => m.Roms)
                 .AsNoTracking()
                 .ToListAsync();
+            throw new NotImplementedException();
         }
     }
 }

@@ -4,7 +4,7 @@ namespace RomsBrowse.Web.Extensions
 {
     public static class JsonExtensions
     {
-        private static readonly JsonSerializerOptions opt = new JsonSerializerOptions(JsonSerializerDefaults.General)
+        private static readonly JsonSerializerOptions opt = new(JsonSerializerDefaults.General)
         {
             WriteIndented = true,
             PropertyNameCaseInsensitive = true
