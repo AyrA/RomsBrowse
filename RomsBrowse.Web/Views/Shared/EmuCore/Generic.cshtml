@@ -2,10 +2,21 @@
 @{
     var url = Url.Action("EmulatorScript", "Rom", new { id = Model.Id });
 }
-
+<h1>@ViewData["Title"]</h1>
 <emulator-container>
     <div id="game"></div>
 </emulator-container>
+<p>
+    For now this works best in chromium based browsers (chromium, chrome, edge).
+    Firefox has some audio playback issues but emulation works fine otherwise.<br />
+    Most standard controllers are supported.
+    Just press any controller key so the page can register it.<br />
+    Save data is kept in your browser.
+    The emulator toolbar has icons to import and export your save.
+    You should export your save after a game session if you intend to resume it later
+    and want to make sure your browser did not delete it.
+    Be sure to uase the ingame save functionality first if there is one.
+</p>
 
 <script type="text/javascript" src="@url"></script>
 <script src="/emulator/data/loader.js"></script>
