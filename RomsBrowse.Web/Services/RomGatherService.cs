@@ -111,6 +111,7 @@ namespace RomsBrowse.Web.Services
             {
                 DisplayName = config.DisplayName,
                 ShortName = config.ShortName,
+                EmulatorType = config.EmulatorType,
                 Folder = config.FolderName,
                 Roms = [],
             };
@@ -167,6 +168,7 @@ namespace RomsBrowse.Web.Services
         {
             ctx.Platforms.Attach(p);
             p.ShortName = config.ShortName;
+            p.EmulatorType = config.EmulatorType;
             p.DisplayName = config.DisplayName;
             p.Folder = config.FolderName;
 
