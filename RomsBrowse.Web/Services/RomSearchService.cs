@@ -58,10 +58,10 @@ namespace RomsBrowse.Web.Services
                 .FirstOrDefaultAsync(m => m.Id == id);
         }
 
-        public async Task<string?> GetRomPath(int id)
+        public async Task<string?> GetRomPath(int id, string? fileName = null)
         {
             var rom = await GetRom(id);
-            if (rom == null)
+            if (rom == null || (fileName != null && rom.FileName != fileName))
             {
                 return null;
             }

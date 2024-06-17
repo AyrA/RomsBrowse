@@ -20,3 +20,10 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+emulator-container {
+    display:block;
+    width: 640px;
+    height: 480px;
+    max-width: 100%
+}

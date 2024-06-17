@@ -23,6 +23,19 @@ builder.Services.AddControllersWithViews();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+app.Use((context, next) =>
+{
+    string[] headers =
+    [
+        "default-src 'self' blob:",
+        "style-src 'self' 'unsafe-inline'",
+        "script-src blob: 'self' 'unsafe-eval'"
+    ];
+    context.Response.Headers.ContentSecurityPolicy = string.Join(";", headers);
+    return next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
@@ -32,13 +45,15 @@ else
     app.UseExceptionHandler("/Home/Error");
 }
 
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions()
+{
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/octet-stream"
+});
 app.UseRouting();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 
 //Run helpers
 SetThreadLanguage("de-ch");
