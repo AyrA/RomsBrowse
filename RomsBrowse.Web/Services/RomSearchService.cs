@@ -68,6 +68,22 @@ namespace RomsBrowse.Web.Services
             return Path.Combine(rootDir, rom.Platform.Folder, rom.FilePath);
         }
 
+        public async Task<RomFile[]> GetRoms(int platformId, int page)
+        {
+            page = Math.Max(1, page);
+            if (platformId <= 0)
+            {
+                return [];
+            }
+            return await ctx.RomFiles
+                .AsNoTracking()
+                .Where(m => m.PlatformId == platformId)
+                .OrderBy(m => m.DisplayName)
+                .Skip((page - 1) * MaxResultCount)
+                .Take(MaxResultCount)
+                .ToArrayAsync();
+        }
+
         private static string ParseString(string term)
         {
             //Replace SQL search values with spaces

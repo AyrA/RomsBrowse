@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class HomeController(RomSearchService searchService) : Controller
+    public class HomeController(RomSearchService searchService, PlatformService platformService) : Controller
     {
         public IActionResult Index()
         {
@@ -31,7 +31,32 @@ namespace RomsBrowse.Web.Controllers
             return View(vm);
         }
 
-        public async Task<IActionResult> ROM(int? id)
+        public async Task<IActionResult> Platform(int id, int page)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+            var platform = await platformService.GetPlatform(id, false);
+            if (platform == null)
+            {
+                return NotFound();
+            }
+            page = Math.Max(page, 1);
+            var roms = await searchService.GetRoms(id, page);
+            var totalCount = await platformService.GetRomCount(id);
+            var vm = new PlatformViewModel()
+            {
+                PlatformName = platform.DisplayName,
+                RomCount = totalCount,
+                Page = page,
+                PageCount = (int)Math.Ceiling((double)totalCount / searchService.ResultLimit),
+                Roms = roms,
+            };
+            return View(vm);
+        }
+
+        public async Task<IActionResult> Rom(int? id)
         {
             if (id == null || id.Value <= 0)
             {

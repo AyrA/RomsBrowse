@@ -1,0 +1,50 @@
+﻿@model PagingViewModel
+@{
+    //Get all query values so we can cobble together the URL without this partial being aware of it
+    var routeValues = Url.ActionContext.HttpContext.Request.Query.ToDictionary(m => m.Key, m => m.Value.ToString());
+    //Always start iterating on page 1
+    routeValues["page"] = "1";
+
+    var visiblePages = Enumerable
+        .Range(1, Model.TotalPages)
+        .Where(m => m >= Model.Page - Model.ExtraPages && m <= Model.Page + Model.ExtraPages)
+        .ToArray();
+}
+
+<p>Page @Model.Page of @Model.TotalPages</p>
+
+<div class="paging input-group">
+    @if (Model.Page > 1)
+    {
+        <a class="btn btn-outline-primary" asp-all-route-data="routeValues" title="First page">&lt;&lt;&lt;</a>
+        routeValues["page"] = (Model.Page - 1).ToString();
+        <a class="btn btn-outline-primary" asp-all-route-data="routeValues" title="Previous page">&lt;&lt;</a>
+    }
+    else
+    {
+        <button class="btn btn-outline-primary" title="First page">&lt;&lt;&lt;</button>
+    }
+    @foreach (var num in visiblePages)
+    {
+        routeValues["page"] = num.ToString();
+        @if (num == Model.Page)
+        {
+            <button class="btn btn-outline-success">@num</button>
+        }
+        else
+        {
+            <a class="btn btn-outline-primary" asp-all-route-data="routeValues">@num</a>
+        }
+    }
+    @if (Model.Page < Model.TotalPages)
+    {
+        routeValues["page"] = (Model.Page + 1).ToString();
+        <a class="btn btn-outline-primary" asp-all-route-data="routeValues" title="Next page">&gt;&gt;</a>
+        routeValues["page"] = Model.TotalPages.ToString();
+        <a class="btn btn-outline-primary" asp-all-route-data="routeValues" title="Last page">&gt;&gt;&gt;</a>
+    }
+    else
+    {
+        <button class="btn btn-outline-primary" title="Last page">&gt;&gt;&gt;</button>
+    }
+</div>

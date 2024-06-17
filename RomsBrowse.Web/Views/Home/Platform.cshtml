@@ -1,0 +1,21 @@
+﻿@model PlatformViewModel
+@{
+    ViewData["Title"] = Model.PlatformName;
+    var pagingModel = new PagingViewModel(Model.Page, Model.PageCount, 3);
+}
+<h1>@Model.PlatformName</h1>
+
+@await Html.PartialAsync("PartialPaging", pagingModel)
+
+<table class="table">
+    @foreach (var rom in Model.Roms)
+    {
+        <tr>
+            <td>
+                <a asp-action="Rom" asp-route-id="@rom.Id">@rom.DisplayName</a>
+            </td>
+        </tr>
+    }
+</table>
+
+@await Html.PartialAsync("PartialPaging", pagingModel)
