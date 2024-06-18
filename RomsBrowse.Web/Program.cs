@@ -1,17 +1,28 @@
 using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using RomsBrowse.Data;
 using RomsBrowse.Web.Services;
 using System.Globalization;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
+{
+    Args = args,
+    ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default
+});
+
+//Register as a windows service
+builder.Host.UseWindowsService(options =>
+{
+    options.ServiceName = "RomsBrowse";
+});
 
 #if DEBUG
 AutoDIExtensions.Logger = Console.Out;
 AutoDIExtensions.DebugLogging = true;
 #endif
 
-builder.Services.AddLogging(opt => opt.AddConsole());
+builder.Services.AddLogging(ConfigureLogging);
 
 //Auto register services
 builder.Services.AutoRegisterCurrentAssembly();
@@ -58,7 +69,6 @@ app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 //Run helpers
 SetThreadLanguage("de-ch");
 await MigrateAsync();
-//await UpdateRomDirectory();
 await InitDataFields();
 
 await app.RunAsync();
@@ -70,15 +80,8 @@ async Task InitDataFields()
     using var scope = app.Services.CreateScope();
     var menuService = app.Services.GetRequiredService<MainMenuService>();
     var platformService = scope.ServiceProvider.GetRequiredService<PlatformService>();
-    menuService.SetMenuItems(await platformService.GetPlatforms(false));
-}
-
-async Task UpdateRomDirectory()
-{
-    using var scope = app.Services.CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var rgs = scope.ServiceProvider.GetRequiredService<RomGatherService>();
-    await rgs.GatherRoms();
+    var counts = await platformService.GetAllRomCount();
+    menuService.SetMenuItems(await platformService.GetPlatforms(false), counts);
 }
 
 async Task MigrateAsync()
@@ -109,6 +112,22 @@ async Task MigrateAsync()
     else
     {
         migLog.LogInformation("Database has no pending changes to be applied");
+    }
+}
+
+static void ConfigureLogging(ILoggingBuilder builder)
+{
+    var isWin = OperatingSystem.IsWindows();
+    //Log to console if not run as a service or not on Windows
+    if (!isWin || !WindowsServiceHelpers.IsWindowsService())
+    {
+        builder.AddConsole();
+    }
+
+    //Log to event log on windows if run as a service
+    if (isWin && WindowsServiceHelpers.IsWindowsService())
+    {
+        builder.AddEventLog(opt => opt.Filter = (msg, level) => level >= LogLevel.Error);
     }
 }
 

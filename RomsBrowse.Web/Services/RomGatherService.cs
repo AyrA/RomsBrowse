@@ -8,19 +8,57 @@ using System.Security.Cryptography;
 
 namespace RomsBrowse.Web.Services
 {
-    [AutoDIRegister(AutoDIType.Scoped)]
-    public class RomGatherService(IConfiguration config, RomsContext ctx, ILogger<RomGatherService> logger)
+    [AutoDIHostedService]
+    public class RomGatherService(IServiceProvider provider, IConfiguration config, ILogger<RomGatherService> logger) : IHostedService
     {
-        private static readonly SemaphoreSlim locker = new(1);
-        private static bool isScanningGlobal = false;
-
         private readonly string rootDir = Path.GetFullPath(config.GetValue<string>("RomDir")
             ?? throw new InvalidOperationException("'RomDir' not set"));
 
-        /// <summary>
-        /// Gets if a scan is currently ongoing
-        /// </summary>
-        public bool IsScanning => GetScanning();
+        private Thread? t = null;
+        private CancellationTokenSource? cts = null;
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            if (t != null)
+            {
+                throw new InvalidOperationException("A gathering task is already running");
+            }
+            t = new Thread(GatherRoms)
+            {
+                IsBackground = true,
+            };
+            cts = new();
+            t.Start();
+            return Task.CompletedTask;
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            var cancelTask = cts?.CancelAsync();
+
+            if (cancelTask != null)
+            {
+                await cancelTask;
+            }
+            t?.Join(TimeSpan.FromSeconds(10));
+            cts = null;
+            t = null;
+        }
+
+        private void CheckAbort()
+        {
+            var token = cts?.Token
+                ?? throw new InvalidOperationException("Cancellation token source was not set");
+            token.ThrowIfCancellationRequested();
+        }
+
+        private void UpdateMenu()
+        {
+            using var scope = provider.CreateScope();
+            var platformService = scope.ServiceProvider.GetRequiredService<PlatformService>();
+            var menuService = scope.ServiceProvider.GetRequiredService<MainMenuService>();
+            menuService.SetMenuItems(platformService.GetPlatforms(false).Result, platformService.GetAllRomCount().Result);
+        }
 
         /// <summary>
         /// Scans for new, updated, and deleted ROMS
@@ -30,22 +68,19 @@ namespace RomsBrowse.Web.Services
         /// Only one scan can be used at a time.
         /// Use <see cref="IsScanning"/> to determine if one is currently ongoing
         /// </remarks>
-        public async Task GatherRoms()
+        private void GatherRoms()
         {
-            if (!await locker.WaitAsync(TimeSpan.FromMilliseconds(100)))
-            {
-                throw new InvalidOperationException("ROMS are already being scanned");
-            }
-            SetScanning(true);
+            using var scope = provider.CreateScope();
+            var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
             try
             {
                 var configs = GetConfig().ToList();
                 var names = configs.Select(m => m.ShortName).ToList();
                 logger.LogInformation("Configured rom directories: {Dirs}", names);
-                var platforms = await ctx.Platforms
+                var platforms = ctx.Platforms
                     .Include(m => m.Roms)
                     .AsNoTracking()
-                    .ToListAsync();
+                    .ToList();
 
                 //Delete platforms that do not exist anymore
                 var toDelete = platforms
@@ -54,47 +89,38 @@ namespace RomsBrowse.Web.Services
                 if (toDelete.Count > 0)
                 {
                     logger.LogInformation("Deleting {Count} platforms", toDelete.Count);
-                    await DeleteOldPlatforms(toDelete);
+                    DeleteOldPlatforms(ctx, toDelete);
                     toDelete.ForEach(m => platforms.Remove(m));
                     toDelete.ForEach(m => names.Remove(m.ShortName));
+                    UpdateMenu();
                 }
 
                 //Add new platforms and update existing ones
                 foreach (var config in configs)
                 {
+                    CheckAbort();
                     var match = platforms.FirstOrDefault(m => m.ShortName.Equals(config.ShortName, StringComparison.InvariantCultureIgnoreCase));
                     if (match == null)
                     {
                         logger.LogInformation("Adding new platform: {Name}", config.DisplayName);
-                        await AddPlatform(config);
+                        AddPlatform(ctx, config);
                     }
                     else
                     {
                         logger.LogInformation("Checking platform for updates: {Name}", config.DisplayName);
-                        await UpdatePlatform(config, match);
+                        UpdatePlatform(ctx, config, match);
                     }
+                    UpdateMenu();
                 }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "ROM gathering service ran into an error");
             }
             finally
             {
-                SetScanning(false);
-                locker.Release();
-            }
-        }
-
-        private static bool GetScanning()
-        {
-            lock (locker)
-            {
-                return isScanningGlobal;
-            }
-        }
-
-        private static void SetScanning(bool value)
-        {
-            lock (locker)
-            {
-                isScanningGlobal = value;
+                t = null;
+                cts = null;
             }
         }
 
@@ -105,7 +131,7 @@ namespace RomsBrowse.Web.Services
                 .FromJsonRequired<RomDirConfig[]>();
         }
 
-        private async Task<int> AddPlatform(RomDirConfig config)
+        private int AddPlatform(RomsContext ctx, RomDirConfig config)
         {
             var p = new Platform()
             {
@@ -119,14 +145,15 @@ namespace RomsBrowse.Web.Services
             //Roms
             foreach (var romFile in GetRomFiles(p))
             {
-                var rf = await UpdateRomInfoAsync(p, new(), romFile);
+                CheckAbort();
+                var rf = UpdateRomInfo(p, new(), romFile);
                 rf.Validate();
                 ctx.RomFiles.Add(rf);
             }
-            return await ctx.SaveChangesAsync();
+            return ctx.SaveChanges();
         }
 
-        private async Task<RomFile> UpdateRomInfoAsync(Platform p, RomFile f, string romFile)
+        private RomFile UpdateRomInfo(Platform p, RomFile f, string romFile)
         {
             if (f.Platform != p)
             {
@@ -136,11 +163,11 @@ namespace RomsBrowse.Web.Services
             f.FilePath = GetRomSubPath(GetRomPath(p), romFile);
             f.FileName = Path.GetFileName(romFile);
             f.DisplayName = Path.GetFileNameWithoutExtension(f.FileName);
-            if (f.Size == 0 || FileSize(romFile) != f.Size)
+            if (f.Size == 0 || GetFileSize(romFile) != f.Size)
             {
                 logger.LogInformation("(Re-)Computing hash of {FileName}", f.FilePath);
                 using var fs = File.OpenRead(romFile);
-                f.Sha256 = await SHA256.HashDataAsync(fs);
+                f.Sha256 = SHA256.HashData(fs);
                 f.Size = (int)fs.Position;
             }
             return f;
@@ -155,7 +182,7 @@ namespace RomsBrowse.Web.Services
             return romFile[(rootPath.Length + 1)..];
         }
 
-        private static int FileSize(string file) => (int)new FileInfo(file).Length;
+        private static int GetFileSize(string file) => (int)new FileInfo(file).Length;
 
         private string GetRomPath(Platform p) => Path.Combine(rootDir, p.Folder);
 
@@ -164,7 +191,7 @@ namespace RomsBrowse.Web.Services
             return Directory.EnumerateFiles(Path.Combine(rootDir, p.Folder), "*.*", SearchOption.AllDirectories);
         }
 
-        private async Task<int> UpdatePlatform(RomDirConfig config, Platform p)
+        private int UpdatePlatform(RomsContext ctx, RomDirConfig config, Platform p)
         {
             ctx.Platforms.Attach(p);
             p.ShortName = config.ShortName;
@@ -176,6 +203,7 @@ namespace RomsBrowse.Web.Services
             var romPath = GetRomPath(p);
             foreach (var romFile in GetRomFiles(p))
             {
+                CheckAbort();
                 var subPath = GetRomSubPath(romPath, romFile);
                 var existing = pending.FirstOrDefault(m => m.FilePath == subPath);
                 if (existing != null)
@@ -183,31 +211,32 @@ namespace RomsBrowse.Web.Services
                     pending.Remove(existing);
                     //Update existing ROM
                     ctx.RomFiles.Attach(existing);
-                    await UpdateRomInfoAsync(p, existing, romFile);
+                    UpdateRomInfo(p, existing, romFile);
                     existing.Validate();
                 }
                 else
                 {
                     //Add new ROM
-                    var rf = await UpdateRomInfoAsync(p, new(), romFile);
+                    var rf = UpdateRomInfo(p, new(), romFile);
                     rf.Validate();
                     ctx.RomFiles.Add(rf);
                 }
             }
             //Delete ROMS that no longer exist
             ctx.RomFiles.RemoveRange(pending);
-            return await ctx.SaveChangesAsync();
+            return ctx.SaveChanges();
         }
 
-        private async Task<int> DeleteOldPlatforms(IEnumerable<Platform> platforms)
+        private int DeleteOldPlatforms(RomsContext ctx, IEnumerable<Platform> platforms)
         {
             int count = 0;
             foreach (var platform in platforms)
             {
+                CheckAbort();
                 logger.LogInformation("Deleting {Count} ROMs from {Name}...", platform.Roms.Count, platform.DisplayName);
                 ctx.RomFiles.RemoveRange(platform.Roms);
                 ctx.Platforms.Remove(platform);
-                count += await ctx.SaveChangesAsync();
+                count += ctx.SaveChanges();
             }
             logger.LogInformation("Done. Deleted {Count} rows", count);
             return count;

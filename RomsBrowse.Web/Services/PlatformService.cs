@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
+using RomsBrowse.Web.ServiceModels;
 
 namespace RomsBrowse.Web.Services
 {
@@ -31,6 +32,17 @@ namespace RomsBrowse.Web.Services
         public async Task<int> GetRomCount(int platform)
         {
             return await ctx.RomFiles.CountAsync(m => m.PlatformId == platform);
+        }
+
+        public async Task<PlatformCountModel[]> GetAllRomCount()
+        {
+            var counts = await ctx.RomFiles
+                .GroupBy(m => m.PlatformId)
+                .Select(m => new { Platform = m.Key, RomCount = m.Count() })
+                .ToArrayAsync();
+            return counts
+                .Select(m => new PlatformCountModel(m.Platform, m.RomCount))
+                .ToArray();
         }
     }
 }

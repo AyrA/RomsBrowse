@@ -10,7 +10,7 @@
                     <option value="">All platforms</option>
                     @foreach(var item in menuService.Platforms)
                     {
-                        <option value="@item.Id">@item.DisplayName</option>
+                        <option value="@item.Id">@item.DisplayName (@item.RomCount files)</option>
                     }
                 </select>
                 <input type="submit" class="btn btn-primary" value="Search" />
