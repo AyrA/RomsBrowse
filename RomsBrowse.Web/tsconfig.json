@@ -3,7 +3,8 @@
     "compilerOptions": {
         "outDir": "wwwroot/js",
         "target": "ESNext",
-        "strict": true
+        "strict": true,
+        "noEmitOnError": true
     },
     "include": [ "wwwroot/ts/*.ts" ]
 }

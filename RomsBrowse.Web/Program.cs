@@ -39,9 +39,7 @@ app.Use((context, next) =>
 {
     string[] headers =
     [
-        "default-src 'self' blob:",
-        "style-src 'self' 'unsafe-inline'",
-        "script-src blob: 'self' 'unsafe-eval'"
+        "connect-src 'self' blob: data:"
     ];
     context.Response.Headers.ContentSecurityPolicy = string.Join(";", headers);
     return next();
