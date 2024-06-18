@@ -1,5 +1,8 @@
 ﻿@using RomsBrowse.Web.Services
 @inject MainMenuService menuService
+@{
+    var errorMessage = ViewData["ErrorMessage"]?.ToString();
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,6 +44,10 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
             @RenderBody()
         </main>
     </div>

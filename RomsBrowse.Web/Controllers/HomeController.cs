@@ -5,16 +5,25 @@ using System.Diagnostics;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class HomeController(RomSearchService searchService, PlatformService platformService) : Controller
+    public class HomeController(RomSearchService searchService, PlatformService platformService) : BaseController
     {
         public IActionResult Index()
         {
             return View();
         }
 
-        public async Task<IActionResult> SearchAsync([FromQuery] SearchViewModel model)
+        public async Task<IActionResult> Search([FromQuery] SearchViewModel model)
         {
-            model.Validate();
+            try
+            {
+                model.Validate();
+                model.Search = model.Search.Trim();
+            }
+            catch
+            {
+                SetErrorMessage("Did not find any items");
+                return View("Index");
+            }
             var vm = new SearchResultViewModel()
             {
                 SearchModel = model
@@ -28,6 +37,11 @@ namespace RomsBrowse.Web.Controllers
                 vm.Files = await searchService.Search(model.Search);
             }
             vm.IsLimited = vm.Files.Length >= searchService.ResultLimit;
+            if (vm.Files.Length == 0)
+            {
+                SetErrorMessage("Did not find any items");
+            }
+
             return View(vm);
         }
 
