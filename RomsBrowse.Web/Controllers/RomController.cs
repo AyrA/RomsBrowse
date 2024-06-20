@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.Services;
+using RomsBrowse.Web.ViewModels;
 using System.Text;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class RomController(RomSearchService searchService) : Controller
+    public class RomController(RomSearchService searchService, EmulatorCachingService emuCache) : Controller
     {
         [Route("{controller}/{action}/{id}/{fileName}")]
         public async Task<IActionResult> Get(int id, string fileName)
@@ -21,6 +22,26 @@ namespace RomsBrowse.Web.Controllers
             }
             var fs = System.IO.File.OpenRead(p);
             return File(fs, "application/octet-stream");
+        }
+
+        public async Task<IActionResult> Play(int? id)
+        {
+            if (id == null || id.Value <= 0)
+            {
+                return NotFound();
+            }
+            var rom = await searchService.GetRom(id.Value);
+            if (rom == null)
+            {
+                return NotFound();
+            }
+
+            var rvm = new RomPlayViewModel(rom)
+            {
+                HasEmulator = emuCache.HasEmulator,
+                IsDownloadingEmulator = emuCache.IsDownloading
+            };
+            return View(rvm);
         }
 
         public async Task<IActionResult> EmulatorScript(int id)

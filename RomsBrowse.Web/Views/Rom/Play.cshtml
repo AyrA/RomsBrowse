@@ -1,0 +1,38 @@
+﻿@model RomPlayViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+@if (Model.HasEmulator)
+{
+    @await Html.PartialAsync($"EmuCore/{Model.EmulatorView}", Model)
+}
+else
+{
+    @if (Model.IsDownloadingEmulator)
+    {
+        <div class="alert alert-warning">
+            <h2>Emulator is being installed</h2>
+            <p>
+                The emulator files are currently being downloaded.
+                This will usually just take a minute or two.<br />
+                This website reloads automatically every 10 seconds.
+            </p>
+        </div>
+        <script src="~/js/timer.js" defer asp-append-version="true"></script>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <h2>Emulator download failed</h2>
+            <p>
+                If you are reading this message,
+                it means that the download of the emulator scripts failed.
+            </p>
+            <p>
+                If you are the owner of this application,
+                check the logs and restart the application to retry the download.
+                If you are a visitor, contact the owner about this problem.
+            </p>
+        </div>
+    }
+}

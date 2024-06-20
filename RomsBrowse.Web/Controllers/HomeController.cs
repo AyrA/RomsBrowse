@@ -70,21 +70,6 @@ namespace RomsBrowse.Web.Controllers
             return View(vm);
         }
 
-        public async Task<IActionResult> Rom(int? id)
-        {
-            if (id == null || id.Value <= 0)
-            {
-                return NotFound();
-            }
-            var rom = await searchService.GetRom(id.Value);
-            if (rom == null)
-            {
-                return NotFound();
-            }
-            var rvm = new RomViewModel(rom);
-            return View(rvm);
-        }
-
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
