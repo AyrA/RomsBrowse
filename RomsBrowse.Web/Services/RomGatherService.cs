@@ -78,7 +78,7 @@ namespace RomsBrowse.Web.Services
                 var names = configs.Select(m => m.ShortName).ToList();
                 logger.LogInformation("Configured rom directories: {Dirs}", names);
                 var platforms = ctx.Platforms
-                    .Include(m => m.Roms)
+                    .Include(m => m.RomFiles)
                     .ThenInclude(m => m.SaveStates)
                     .AsNoTracking()
                     .ToList();
@@ -140,7 +140,7 @@ namespace RomsBrowse.Web.Services
                 ShortName = config.ShortName,
                 EmulatorType = config.EmulatorType,
                 Folder = config.FolderName,
-                Roms = [],
+                RomFiles = [],
             };
             ctx.Platforms.Add(p);
             //Roms
@@ -200,7 +200,7 @@ namespace RomsBrowse.Web.Services
             p.DisplayName = config.DisplayName;
             p.Folder = config.FolderName;
 
-            var pending = p.Roms.ToList();
+            var pending = p.RomFiles.ToList();
             var romPath = GetRomPath(p);
             foreach (var romFile in GetRomFiles(p))
             {
@@ -235,9 +235,9 @@ namespace RomsBrowse.Web.Services
             foreach (var platform in platforms)
             {
                 CheckAbort();
-                logger.LogInformation("Deleting {Count} ROMs from {Name}...", platform.Roms.Count, platform.DisplayName);
-                ctx.SaveStates.RemoveRange(platform.Roms.SelectMany(m => m.SaveStates));
-                ctx.RomFiles.RemoveRange(platform.Roms);
+                logger.LogInformation("Deleting {Count} ROMs from {Name}...", platform.RomFiles.Count, platform.DisplayName);
+                ctx.SaveStates.RemoveRange(platform.RomFiles.SelectMany(m => m.SaveStates));
+                ctx.RomFiles.RemoveRange(platform.RomFiles);
                 ctx.Platforms.Remove(platform);
                 count += ctx.SaveChanges();
             }

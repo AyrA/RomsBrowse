@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -53,7 +52,7 @@ namespace RomsBrowse.Data.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_SaveStates_UserId_RomFileId",
                 table: "SaveStates",
-                columns: new[] { "UserId", "RomFileId" },
+                columns: ["UserId", "RomFileId"],
                 unique: true);
         }
 

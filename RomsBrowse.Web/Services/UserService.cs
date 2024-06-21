@@ -11,7 +11,7 @@ namespace RomsBrowse.Web.Services
         {
             var cutoff = DateTime.UtcNow.Subtract(maxAge);
             return
-                ctx.SaveStates.Where(m => m.Owner.LastLogin < cutoff).ExecuteDelete() +
+                ctx.SaveStates.Where(m => m.User.LastLogin < cutoff).ExecuteDelete() +
                 ctx.Users.Where(m => m.LastLogin < cutoff).ExecuteDelete();
         }
     }

@@ -14,7 +14,7 @@ namespace RomsBrowse.Web.Services
             var query = ctx.Platforms.AsNoTracking();
             if (includeRoms)
             {
-                query = query.Include(m => m.Roms);
+                query = query.Include(m => m.RomFiles);
             }
             return await query.ToArrayAsync();
         }
@@ -24,7 +24,7 @@ namespace RomsBrowse.Web.Services
             var query = ctx.Platforms.AsNoTracking();
             if (includeRoms)
             {
-                query = query.Include(m => m.Roms);
+                query = query.Include(m => m.RomFiles);
             }
             return await query.FirstOrDefaultAsync(m => m.Id == platform);
         }
