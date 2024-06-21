@@ -14,9 +14,9 @@ namespace RomsBrowse.Data
 
         public DbSet<RomFile> RomFiles { get; set; }
 
-        public DbSet<User> Users { get; set; }
-
         public DbSet<SaveState> SaveStates { get; set; }
+
+        public DbSet<User> Users { get; set; }
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RomsBrowse.Common;
 using System.ComponentModel.DataAnnotations;
 
 namespace RomsBrowse.Data.Models
@@ -6,7 +7,7 @@ namespace RomsBrowse.Data.Models
 #nullable disable
     [Index(nameof(ShortName), IsUnique = true)]
     [Index(nameof(Folder), IsUnique = true)]
-    public class Platform
+    public class Platform : IValidateable
     {
         [Key]
         public int Id { get; set; }
@@ -20,10 +21,15 @@ namespace RomsBrowse.Data.Models
         [Required, StringLength(20)]
         public string EmulatorType { get; set; }
 
-        [Required]
+        [Required, StringLength(50)]
         public string Folder { get; set; }
 
-        public virtual ICollection<RomFile> Roms { get; set; }
+        public virtual ICollection<RomFile> RomFiles { get; set; }
+
+        public void Validate()
+        {
+            ValidationTools.ValidatePublic(this);
+        }
     }
 #nullable restore
 }

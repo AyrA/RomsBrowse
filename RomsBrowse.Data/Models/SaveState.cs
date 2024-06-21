@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace RomsBrowse.Data.Models
 {
 #nullable disable
-    [Index(nameof(Owner), nameof(Game), IsUnique = true)]
+    [Index(nameof(UserId), nameof(RomFileId), IsUnique = true)]
     [Index(nameof(Created))]
     public class SaveState
     {
@@ -12,10 +12,14 @@ namespace RomsBrowse.Data.Models
         public int Id { get; set; }
 
         [Required]
-        public User Owner { get; set; }
+        public User User { get; set; }
+
+        public int UserId { get; set; }
 
         [Required]
-        public RomFile Game { get; set; }
+        public RomFile RomFile { get; set; }
+
+        public int RomFileId { get; set; }
 
         [Required]
         public DateTime Created { get; set; }
