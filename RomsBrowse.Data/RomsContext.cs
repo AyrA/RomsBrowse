@@ -39,6 +39,7 @@ namespace RomsBrowse.Data
             {
                 dbOpt.UseSqlServer(config.GetConnectionString("Default"), sqlOpt =>
                 {
+                    sqlOpt.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
                     sqlOpt.MigrationsAssembly(typeof(RomsContext).Assembly.GetName().Name);
                     sqlOpt.EnableRetryOnFailure();
                     sqlOpt.CommandTimeout(10);
