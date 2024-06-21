@@ -1,1 +1,30 @@
-﻿
+﻿@{
+    ViewData["Title"] = "Login or Register";
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    This application uses an anonymous approach to user accounts.
+    An account simply exists when you start using it,
+    and stops existing when you stop using it.<br />
+    Your username and password is not sent to the server.
+    It is merely used to generate a unique id in your browser.<br />
+    This means you don't have to trust in this site keeping your password safe,
+    or having your username (which is often your e-mail address) leaked in yet another data breach.<br />
+    Of course this also means changing your password alters your id,
+    making you lose access to your saved games.
+</p>
+<div class="row d-none d-sm-block mb-1">
+    <div class="col-12">
+        <div class="input-group">
+            <input type="text" class="form-control" name="UserName" placeholder="Username" required />
+            <input type="password" class="form-control" name="UserPass" placeholder="Password" required />
+            <input type="button" class="btn btn-primary" value="Log in" data-action="Login" />
+        </div>
+    </div>
+</div>
+<div class="d-sm-none mb-1">
+    <input type="text" name="UserName" class="form-control mb-1" placeholder="Username" required />
+    <input type="password" name="UserPass" class="form-control mb-1" placeholder="Password" required />
+    <input type="button" class="btn btn-primary" value="Log in" data-action="Login" />
+</div>

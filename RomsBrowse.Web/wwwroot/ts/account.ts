@@ -43,13 +43,13 @@ namespace Account {
         }
         const fd = CSRF.enrich(new FormData());
         fd.set("Id", id);
-        const result = await fetch("/Account/SignIn", { method: "POST", body: fd });
+        const result = await fetch("/Account/Login", { method: "POST", body: fd });
         return result.ok;
     }
 
     export async function signOut() {
         const fd = CSRF.enrich(new FormData());
-        const result = await fetch("/Account/SignOut", { method: "POST", body: fd });
+        const result = await fetch("/Account/Logout", { method: "POST", body: fd });
         return result.ok;
     }
 
