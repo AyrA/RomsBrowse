@@ -1,22 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Web.ViewModels;
+using System.Security.Claims;
 
 namespace RomsBrowse.Web.Controllers
 {
     public class AccountController : BaseController
     {
-        private static readonly CookieOptions userIdOpt = new()
-        {
-            HttpOnly = true,
-            IsEssential = true,
-            MaxAge = TimeSpan.FromDays(365),
-            Path = "/",
-            SameSite = SameSiteMode.Strict,
-#if !DEBUG
-            Secure = true
-#endif
-        };
-
         [HttpGet]
         public IActionResult Login()
         {
@@ -28,7 +19,7 @@ namespace RomsBrowse.Web.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public IActionResult Login(SignInModel model)
+        public async Task<IActionResult> Login(SignInModel model)
         {
             if (model.Id == Guid.Empty)
             {
@@ -36,15 +27,19 @@ namespace RomsBrowse.Web.Controllers
             }
             else
             {
-                HttpContext.Response.Cookies.Append("UserId", model.Id.ToString(), userIdOpt);
+                var claim = new Claim(ClaimTypes.Name, model.Id.ToString());
+                var ident = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
+                ident.AddClaim(claim);
+                var cp = new ClaimsPrincipal(ident);
+                await HttpContext.SignInAsync(cp);
             }
             return Ok();
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.Response.Cookies.Delete("UserId", userIdOpt);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Ok();
         }
     }

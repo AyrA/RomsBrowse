@@ -6,6 +6,7 @@ namespace RomsBrowse.Data.Models
 {
 #nullable disable
     [Index(nameof(Username), IsUnique = true)]
+    [Index(nameof(LastLogin))]
     public class User : IValidateable
     {
         [Key]
@@ -18,6 +19,8 @@ namespace RomsBrowse.Data.Models
         public string Hash { get; set; }
 
         public DateTime LastLogin { get; set; }
+
+        public virtual ICollection<SaveState> SaveStates { get; set; }
 
         public void Validate()
         {

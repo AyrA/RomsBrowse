@@ -31,6 +31,8 @@ namespace RomsBrowse.Data.Models
 
         public int PlatformId { get; set; }
 
+        public virtual ICollection<SaveState> SaveStates { get; set; }
+
         public void Validate()
         {
             ValidationTools.ValidatePublic(this);

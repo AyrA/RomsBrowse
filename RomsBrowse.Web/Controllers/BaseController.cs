@@ -12,13 +12,9 @@ namespace RomsBrowse.Web.Controllers
 
         public override void OnActionExecuting(ActionExecutingContext context)
         {
-            var cookie = context.HttpContext.Request.Cookies["UserId"];
-            if (!string.IsNullOrWhiteSpace(cookie))
+            if (User.Identity?.IsAuthenticated ?? false)
             {
-                if (Guid.TryParse(cookie, out Guid value))
-                {
-                    UserId = value;
-                }
+                UserId = Guid.Parse(User.Identity.Name!);
             }
             ViewData["User"] = new UserViewModel(UserId);
             base.OnActionExecuting(context);
