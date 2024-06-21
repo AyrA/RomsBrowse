@@ -10,6 +10,7 @@ namespace RomsBrowse.Web.Services
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            _timer?.Dispose();
             _timer = new Timer(Callback, null, TimeSpan.FromSeconds(1), TimeSpan.FromHours(1));
             return Task.CompletedTask;
         }
