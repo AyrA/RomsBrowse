@@ -2,7 +2,7 @@
     "compileOnSave": true,
     "compilerOptions": {
         "removeComments": true,
-        "outDir": "wwwroot/js",
+        "outFile": "wwwroot/js/scripts.js",
         "target": "ESNext",
         "strict": true,
         "noEmitOnError": true
