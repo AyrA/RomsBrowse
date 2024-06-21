@@ -79,6 +79,7 @@ namespace RomsBrowse.Web.Services
                 logger.LogInformation("Configured rom directories: {Dirs}", names);
                 var platforms = ctx.Platforms
                     .Include(m => m.Roms)
+                    .ThenInclude(m => m.SaveStates)
                     .AsNoTracking()
                     .ToList();
 
@@ -223,6 +224,7 @@ namespace RomsBrowse.Web.Services
                 }
             }
             //Delete ROMS that no longer exist
+            ctx.SaveStates.RemoveRange(pending.SelectMany(m => m.SaveStates));
             ctx.RomFiles.RemoveRange(pending);
             return ctx.SaveChanges();
         }
@@ -234,6 +236,7 @@ namespace RomsBrowse.Web.Services
             {
                 CheckAbort();
                 logger.LogInformation("Deleting {Count} ROMs from {Name}...", platform.Roms.Count, platform.DisplayName);
+                ctx.SaveStates.RemoveRange(platform.Roms.SelectMany(m => m.SaveStates));
                 ctx.RomFiles.RemoveRange(platform.Roms);
                 ctx.Platforms.Remove(platform);
                 count += ctx.SaveChanges();
