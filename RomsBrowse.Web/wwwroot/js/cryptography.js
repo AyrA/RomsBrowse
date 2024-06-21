@@ -18,9 +18,18 @@ var Cryptography;
             salt: toBuffer(salt)
         };
         var cryptoKey = await crypto.subtle.importKey("raw", toBuffer(key), params.name, false, ["deriveBits", "deriveKey"]);
-        return await crypto.subtle.deriveBits(params, cryptoKey, byteCount);
+        return Guid.parse(await crypto.subtle.deriveBits(params, cryptoKey, byteCount));
     }
     Cryptography.deriveGuid = deriveGuid;
+    function getRandom(count) {
+        if (count < 1) {
+            throw new RangeError("Byte count must be at least 1");
+        }
+        const ret = new Uint8Array(count);
+        crypto.getRandomValues(ret);
+        return ret;
+    }
+    Cryptography.getRandom = getRandom;
     function toBuffer(data) {
         if (typeof (data) === "string") {
             data = new TextEncoder().encode(data);
@@ -30,4 +39,5 @@ var Cryptography;
         }
         return data.buffer;
     }
+    Cryptography.toBuffer = toBuffer;
 })(Cryptography || (Cryptography = {}));

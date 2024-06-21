@@ -1,6 +1,7 @@
 {
     "compileOnSave": true,
     "compilerOptions": {
+        "removeComments": true,
         "outDir": "wwwroot/js",
         "target": "ESNext",
         "strict": true,
