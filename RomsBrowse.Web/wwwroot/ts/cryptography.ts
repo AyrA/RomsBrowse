@@ -1,6 +1,6 @@
 namespace Cryptography {
-    export async function deriveGuid(salt: string | BufferSource, key: string | BufferSource,
-        difficulty: number, byteCount: number): Promise<string> {
+    export async function deriveBytes(salt: string | BufferSource, key: string | BufferSource,
+        difficulty: number, byteCount: number): Promise<ArrayBuffer> {
 
         if (difficulty < 1_000) {
             throw new RangeError(`difficulty must be at least 1000, but is ${difficulty}`);
@@ -13,12 +13,12 @@ namespace Cryptography {
         }
         const params = {
             iterations: difficulty,
-            hash: "SHA256",
+            hash: "SHA-256",
             name: "PBKDF2",
             salt: toBuffer(salt)
         } as Pbkdf2Params;
         var cryptoKey = await crypto.subtle.importKey("raw", toBuffer(key), params.name, false, ["deriveBits", "deriveKey"]);
-        return Guid.parse(await crypto.subtle.deriveBits(params, cryptoKey, byteCount));
+        return await crypto.subtle.deriveBits(params, cryptoKey, byteCount * 8);
     }
 
     export function getRandom(count: number) {
@@ -32,7 +32,7 @@ namespace Cryptography {
 
     export function toBuffer(data: string | BufferSource): ArrayBuffer {
         if (typeof (data) === "string") {
-            data = new TextEncoder().encode(data);
+            return new TextEncoder().encode(data).buffer;
         }
         if (data instanceof ArrayBuffer) {
             return data;

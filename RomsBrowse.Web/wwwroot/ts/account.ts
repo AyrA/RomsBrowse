@@ -32,8 +32,25 @@ namespace Account {
         if (!ratePassword(password).isSafe) {
             throw new Error("Password is not safe");
         }
-        const id = await Cryptography.deriveGuid(username, password, difficulty, 16);
+        const bytes = await Cryptography.deriveBytes(username, password, difficulty, 16);
+        const id = Guid.parse(bytes);
+        console.log(id);
+    }
 
+    export async function signIn(id: string) {
+        if (!Guid.test(id) || id === Guid.empty) {
+            throw new Error("Invalid id");
+        }
+        const fd = CSRF.enrich(new FormData());
+        fd.set("Id", id);
+        const result = await fetch("/Account/SignIn", { method: "POST", body: fd });
+        return result.ok;
+    }
+
+    export async function signOut() {
+        const fd = CSRF.enrich(new FormData());
+        const result = await fetch("/Account/SignOut", { method: "POST", body: fd });
+        return result.ok;
     }
 
     export function ratePassword(password?: string): PasswordRating {

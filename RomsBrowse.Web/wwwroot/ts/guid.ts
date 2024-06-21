@@ -7,7 +7,7 @@ namespace Guid {
         }
         const raw = new Uint8Array(Cryptography.toBuffer(data));
         if (raw.length !== 16) {
-            throw new RangeError("Data must consist of exactly 16 bytes");
+            throw new RangeError(`Data must consist of exactly 16 bytes, but ${raw.length} was present`);
         }
         const nibbles = [] as number[];
         raw.forEach(value => { nibbles.push(value >> 4); nibbles.push(value & 0xF); });

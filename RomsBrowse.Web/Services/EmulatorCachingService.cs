@@ -9,6 +9,7 @@ namespace RomsBrowse.Web.Services
         private static bool isDownloading;
 
         public bool HasEmulator => hasEmulator;
+
         public bool IsDownloading => isDownloading;
 
         public async Task EnsureEmulatorExists()

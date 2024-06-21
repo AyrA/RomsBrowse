@@ -20,10 +20,10 @@ namespace WasmCheck {
     </p>
     <form method="dialog"><input type="submit" value="Close" /></form>
 </dialog>`);
-            const dlg = document.querySelector("dialog") as HTMLDialogElement;
+            const dlg = q("dialog") as HTMLDialogElement;
             dlg.addEventListener("close", () => void dlg.remove());
             dlg.showModal();
-            document.querySelector("emulator-container")?.remove();
+            q("emulator-container")?.remove();
             return false;
         }
         else {
@@ -32,7 +32,10 @@ namespace WasmCheck {
         return true;
     }
 
-    if (document.querySelector("emulator-container")) {
+    if (q("emulator-container")) {
         reportWebAssembly();
     }
 }
+
+function q(x: string) { return document.querySelector(x); }
+function qa(x: string) { return document.querySelectorAll(x); }

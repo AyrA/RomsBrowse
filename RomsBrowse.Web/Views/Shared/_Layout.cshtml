@@ -1,10 +1,13 @@
-﻿@using RomsBrowse.Web.Services
+﻿@using Microsoft.AspNetCore.Antiforgery
+@using RomsBrowse.Web.Services
+@inject IAntiforgery antiforgery
 @inject MainMenuService menuService
 @{
     var errorMessage = ViewData["ErrorMessage"]?.ToString();
+    var tokens = antiforgery.GetTokens(Context);
 }
 <!DOCTYPE html>
-<html lang="en">
+<html data-token="@Json.Serialize(tokens).ToString()" lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -59,10 +62,7 @@
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/cryptography.js" asp-append-version="true"></script>
-    <script src="~/js/guid.js" asp-append-version="true"></script>
-    <script src="~/js/account.js" asp-append-version="true"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/scripts.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
