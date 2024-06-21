@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RomsBrowse.Data.Conversions;
 using RomsBrowse.Data.Models;
 
 namespace RomsBrowse.Data
@@ -10,7 +11,20 @@ namespace RomsBrowse.Data
     public class RomsContext(DbContextOptions<RomsContext> opt) : DbContext(opt)
     {
         public DbSet<Platform> Platforms { get; set; }
+
         public DbSet<RomFile> RomFiles { get; set; }
+
+        public DbSet<User> Users { get; set; }
+
+        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        {
+            ArgumentNullException.ThrowIfNull(configurationBuilder);
+
+            configurationBuilder.Properties<DateTime>()
+                .HaveConversion<DateTimeAsUtcValueConverter>();
+            configurationBuilder.Properties<DateTime?>()
+                .HaveConversion<NullableDateTimeAsUtcValueConverter>();
+        }
 
         public static void Register(IServiceCollection services)
         {
