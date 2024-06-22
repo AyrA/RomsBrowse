@@ -93,6 +93,7 @@ namespace RomsBrowse.Web.Controllers
                 SetErrorMessage("Invalid username or password");
                 return View();
             }
+            await _userService.Ping(verify.Username);
             await HttpContext.SignInAsync(_userService.GetPrincipal(verify.Username));
             return Redirect("/");
         }
@@ -101,7 +102,7 @@ namespace RomsBrowse.Web.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync();
-            return Ok();
+            return Redirect("/");
         }
     }
 }

@@ -6,7 +6,7 @@ using System.Text;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class RomController(RomSearchService searchService, EmulatorCachingService emuCache) : Controller
+    public class RomController(RomSearchService searchService, SaveStateService saveStateService, EmulatorCachingService emuCache) : Controller
     {
         [Route("{controller}/{action}/{id}/{fileName}")]
         public async Task<IActionResult> Get(int id, string fileName)
@@ -70,6 +70,39 @@ EJS_defaultOptions = {{
 }};
 ";
             return File(Encoding.UTF8.GetBytes(romCode), "text/javascript");
+        }
+
+        public async Task<IActionResult> SaveState(SaveStateModel model)
+        {
+            if (!(User.Identity?.IsAuthenticated ?? false))
+            {
+                HttpContext.Response.StatusCode = 403;
+                return Json(new { Success = false, Error = "Saving progrsss on the server requires an active session" });
+            }
+            try
+            {
+                model.Validate();
+            }
+            catch (Exception ex)
+            {
+                HttpContext.Response.StatusCode = 400;
+                return Json(new { Success = false, Error = ex.Message });
+            }
+
+            using var img = model.Screenshot.OpenReadStream();
+            using var data = model.SaveState.OpenReadStream();
+
+            try
+            {
+                await saveStateService.Save(User.Identity.Name!, model.GameId, img, data);
+            }
+            catch (Exception ex)
+            {
+                HttpContext.Response.StatusCode = 500;
+                return Json(new { Success = false, Error = ex.Message });
+            }
+
+            return Json(new { Success = true });
         }
     }
 }

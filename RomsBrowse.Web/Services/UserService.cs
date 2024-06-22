@@ -32,7 +32,7 @@ namespace RomsBrowse.Web.Services
             {
                 Username = username,
                 Hash = passwordService.HashPassword(password),
-                LastLogin = DateTime.UtcNow
+                LastActivity = DateTime.UtcNow
             };
             ctx.Users.Add(u);
             try
@@ -64,8 +64,8 @@ namespace RomsBrowse.Web.Services
             logger.LogInformation("Running User cleanup. Removing entries older than {Cutoff}", maxAge);
             var cutoff = DateTime.UtcNow.Subtract(maxAge);
             return
-                ctx.SaveStates.Where(m => m.User.LastLogin < cutoff).ExecuteDelete() +
-                ctx.Users.Where(m => m.LastLogin < cutoff).ExecuteDelete();
+                ctx.SaveStates.Where(m => m.User.LastActivity < cutoff).ExecuteDelete() +
+                ctx.Users.Where(m => m.LastActivity < cutoff).ExecuteDelete();
         }
 
         public async Task<AccountVerifyModel> VerifyAccount(string username, string password)
@@ -80,7 +80,7 @@ namespace RomsBrowse.Web.Services
             }
             if (passwordService.CheckPassword(password, user.Hash, out var update))
             {
-                user.LastLogin = DateTime.UtcNow;
+                user.LastActivity = DateTime.UtcNow;
                 if (update)
                 {
                     user.Hash = passwordService.HashPassword(password);
@@ -99,6 +99,13 @@ namespace RomsBrowse.Web.Services
             ];
             var ident = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             return new ClaimsPrincipal(ident);
+        }
+
+        public async Task<bool> Ping(string username)
+        {
+            return 0 < await ctx.Users
+                .Where(m => m.Username == username)
+                .ExecuteUpdateAsync(m => m.SetProperty(p => p.LastActivity, DateTime.UtcNow));
         }
     }
 }

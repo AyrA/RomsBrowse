@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using RomsBrowse.Common;
+using RomsBrowse.Common.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace RomsBrowse.Data.Models
@@ -6,7 +8,7 @@ namespace RomsBrowse.Data.Models
 #nullable disable
     [Index(nameof(UserId), nameof(RomFileId), IsUnique = true)]
     [Index(nameof(Created))]
-    public class SaveState
+    public class SaveState : IValidateable
     {
         [Key]
         public int Id { get; set; }
@@ -29,6 +31,11 @@ namespace RomsBrowse.Data.Models
 
         [Required, MaxLength(1024 * 1024)]
         public byte[] Data { get; set; }
+
+        public void Validate()
+        {
+            ValidationTools.ValidatePublic(this);
+        }
     }
 #nullable restore
 }
