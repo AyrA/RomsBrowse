@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Common;
 using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Data.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace RomsBrowse.Data.Models
@@ -20,6 +21,8 @@ namespace RomsBrowse.Data.Models
         public string Hash { get; set; }
 
         public DateTime LastActivity { get; set; }
+
+        public UserFlags Flags { get; set; }
 
         public virtual ICollection<SaveState> SaveStates { get; set; }
 
