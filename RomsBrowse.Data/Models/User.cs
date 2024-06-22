@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Common;
+using RomsBrowse.Common.Interfaces;
 using System.ComponentModel.DataAnnotations;
 
 namespace RomsBrowse.Data.Models

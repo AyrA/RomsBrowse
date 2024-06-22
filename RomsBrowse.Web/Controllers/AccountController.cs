@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
-using System.Security.Claims;
 
 namespace RomsBrowse.Web.Controllers
 {
@@ -14,6 +12,57 @@ namespace RomsBrowse.Web.Controllers
         public AccountController(UserService userService) : base(userService)
         {
             _userService = userService;
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            if (IsLoggedIn)
+            {
+                return Redirect("/");
+            }
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            model.UserCreated = false;
+            if (IsLoggedIn)
+            {
+                return Redirect("/");
+            }
+            try
+            {
+                model.Validate();
+            }
+            catch (Exception ex)
+            {
+                SetErrorMessage(ex);
+                return View(model);
+            }
+            if (await _userService.Exists(model.Username))
+            {
+                SetErrorMessage("User already exists");
+                return View(model);
+            }
+            try
+            {
+                if (await _userService.Create(model.Username, model.Password1))
+                {
+                    model.UserCreated = true;
+                }
+                else
+                {
+                    throw new Exception("Failed to create user");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetErrorMessage(ex);
+                return View(model);
+            }
+            return View(model);
         }
 
         [HttpGet]
@@ -38,23 +87,20 @@ namespace RomsBrowse.Web.Controllers
                 SetErrorMessage(ex);
                 return View();
             }
-            if (!await _userService.VerifyAccount(model.Username, model.Password))
+            var verify = await _userService.VerifyAccount(model.Username, model.Password);
+            if (!verify.IsValid)
             {
                 SetErrorMessage("Invalid username or password");
                 return View();
             }
-            var claim = new Claim(ClaimTypes.Name, model.Username);
-            var ident = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-            ident.AddClaim(claim);
-            var cp = new ClaimsPrincipal(ident);
-            await HttpContext.SignInAsync(cp);
+            await HttpContext.SignInAsync(_userService.GetPrincipal(verify.Username));
             return Redirect("/");
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync();
             return Ok();
         }
     }

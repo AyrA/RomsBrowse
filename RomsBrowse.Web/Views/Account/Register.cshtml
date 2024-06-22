@@ -1,0 +1,42 @@
+﻿@model RegisterViewModel
+@{
+    ViewData["Title"] = "Register";
+}
+<h1>@ViewData["Title"]</h1>
+
+@if (Model?.UserCreated ?? false)
+{
+    <div class="alert alert-success">
+        User created. You can now sign in.
+    </div>
+}
+else
+{
+    <div class="mb-3">
+        <div class="row d-none d-lg-block mb-1">
+            <div class="col-12">
+                <form method="post">
+                    <div class="input-group">
+                        <input type="text" class="form-control" asp-for="Username" placeholder="Username" required />
+                        <input type="password" class="form-control" asp-for="Password1" placeholder="Password" required />
+                        <input type="password" class="form-control" asp-for="Password2" placeholder="Password" required />
+                        <input type="submit" class="btn btn-primary" value="Register" />
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="d-lg-none mb-1">
+            <form method="post">
+                <input type="text" asp-for="Username" class="form-control mb-1" placeholder="Username" required />
+                <input type="password" asp-for="Password1" class="form-control mb-1" placeholder="Password" required />
+                <input type="password" asp-for="Password2" class="form-control mb-1" placeholder="Password" required />
+                <input type="submit" class="btn btn-primary" value="Register" />
+            </form>
+        </div>
+    </div>
+
+    <p>
+        Have an account already?
+        <a asp-action="Login">Click here to log in</a>
+    </p>
+}

@@ -1,8 +1,11 @@
 ﻿using AyrA.AutoDI;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
+using RomsBrowse.Web.ServiceModels;
+using System.Security.Claims;
 
 namespace RomsBrowse.Web.Services
 {
@@ -65,7 +68,7 @@ namespace RomsBrowse.Web.Services
                 ctx.Users.Where(m => m.LastLogin < cutoff).ExecuteDelete();
         }
 
-        public async Task<bool> VerifyAccount(string username, string password)
+        public async Task<AccountVerifyModel> VerifyAccount(string username, string password)
         {
             ArgumentException.ThrowIfNullOrEmpty(username);
             ArgumentException.ThrowIfNullOrEmpty(password);
@@ -73,7 +76,7 @@ namespace RomsBrowse.Web.Services
             var user = ctx.Users.FirstOrDefault(m => m.Username == username);
             if (user == null)
             {
-                return false;
+                return new(true, username);
             }
             if (passwordService.CheckPassword(password, user.Hash, out var update))
             {
@@ -83,9 +86,19 @@ namespace RomsBrowse.Web.Services
                     user.Hash = passwordService.HashPassword(password);
                 }
                 await ctx.SaveChangesAsync();
-                return true;
+                return new(true, user.Username);
             }
-            return false;
+            return new(true, username);
+        }
+
+        public ClaimsPrincipal GetPrincipal(string username)
+        {
+            Claim[] claims = [
+                new Claim(ClaimTypes.Name, username),
+                new Claim("CreatedAt", DateTime.UtcNow.ToString("O"), ClaimValueTypes.DateTime)
+            ];
+            var ident = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            return new ClaimsPrincipal(ident);
         }
     }
 }

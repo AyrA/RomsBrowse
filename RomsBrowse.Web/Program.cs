@@ -34,18 +34,19 @@ builder.Host.UseWindowsService(options =>
     options.ServiceName = "RomsBrowse";
 });
 
+//Logging
 #if DEBUG
 AutoDIExtensions.Logger = Console.Out;
 AutoDIExtensions.DebugLogging = true;
 #endif
-
 builder.Services.AddLogging(ConfigureLogging);
 
 //Auto register services
 builder.Services.AutoRegisterAllAssemblies();
 
-// Add services to the container.
+//.NET services
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthentication().AddCookie();
 
 var app = builder.Build();
 
@@ -77,6 +78,7 @@ app.UseStaticFiles(new StaticFileOptions()
 });
 app.UseRouting();
 app.UseAuthorization();
+app.UseAuthentication();
 
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 
