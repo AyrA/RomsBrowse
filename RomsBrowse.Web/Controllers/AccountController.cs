@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 using System.Security.Claims;
 
@@ -8,6 +9,13 @@ namespace RomsBrowse.Web.Controllers
 {
     public class AccountController : BaseController
     {
+        private readonly UserService _userService;
+
+        public AccountController(UserService userService) : base(userService)
+        {
+            _userService = userService;
+        }
+
         [HttpGet]
         public IActionResult Login()
         {
@@ -21,19 +29,26 @@ namespace RomsBrowse.Web.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(SignInModel model)
         {
-            if (model.Id == Guid.Empty)
+            try
             {
-                return BadRequest("Invalid or empty user id. Please try again");
+                model.Validate();
             }
-            else
+            catch (Exception ex)
             {
-                var claim = new Claim(ClaimTypes.Name, model.Id.ToString());
-                var ident = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
-                ident.AddClaim(claim);
-                var cp = new ClaimsPrincipal(ident);
-                await HttpContext.SignInAsync(cp);
+                SetErrorMessage(ex);
+                return View();
             }
-            return Ok();
+            if (!await _userService.VerifyAccount(model.Username, model.Password))
+            {
+                SetErrorMessage("Invalid username or password");
+                return View();
+            }
+            var claim = new Claim(ClaimTypes.Name, model.Username);
+            var ident = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
+            ident.AddClaim(claim);
+            var cp = new ClaimsPrincipal(ident);
+            await HttpContext.SignInAsync(cp);
+            return Redirect("/");
         }
 
         [HttpPost, ValidateAntiForgeryToken]

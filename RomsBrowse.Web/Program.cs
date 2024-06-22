@@ -42,8 +42,7 @@ AutoDIExtensions.DebugLogging = true;
 builder.Services.AddLogging(ConfigureLogging);
 
 //Auto register services
-builder.Services.AutoRegisterCurrentAssembly();
-builder.Services.AutoRegisterFromAssembly(typeof(RomsContext).Assembly);
+builder.Services.AutoRegisterAllAssemblies();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

@@ -1,23 +1,27 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public abstract class BaseController : Controller
+    public abstract class BaseController(UserService userService) : Controller
     {
-        protected Guid UserId { get; private set; }
+        protected string? UserName => User.Identity?.Name;
 
-        protected bool IsLoggedIn => UserId != Guid.Empty;
+        protected bool IsLoggedIn => User.Identity?.IsAuthenticated ?? false;
 
-        public override void OnActionExecuting(ActionExecutingContext context)
+        public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            if (User.Identity?.IsAuthenticated ?? false)
+            if (IsLoggedIn && !await userService.Exists(UserName!))
             {
-                UserId = Guid.Parse(User.Identity.Name!);
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                context.Result = new RedirectResult("/");
             }
-            ViewData["User"] = new UserViewModel(UserId);
-            base.OnActionExecuting(context);
+            ViewData["User"] = new UserViewModel(UserName);
+            await base.OnActionExecutionAsync(context, next);
         }
 
         protected void SetErrorMessage(string message)

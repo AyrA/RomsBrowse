@@ -5,7 +5,7 @@
 @{
     var errorMessage = ViewData["ErrorMessage"]?.ToString();
     var tokens = antiforgery.GetTokens(Context);
-    var user = ViewData["User"] as UserViewModel ?? new UserViewModel(Guid.Empty);
+    var user = ViewData["User"] as UserViewModel ?? new UserViewModel(null);
 }
 <!DOCTYPE html>
 <html data-token="@Json.Serialize(tokens).ToString()" lang="en">
@@ -45,7 +45,7 @@
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Your account
+                                    Hello, @user.UserName
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="Saves">Your saved games</a></li>

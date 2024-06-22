@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using RomsBrowse.Common.Services;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -124,6 +125,23 @@ namespace RomsBrowse.Common
                     else
                     {
                         throw new ValidationException(propName, $"Property {propName} has {nameof(StringLengthAttribute)} but is not a string. Is: {value?.GetType()}");
+                    }
+                }
+                else if (attr is SafePasswordAttribute pa)
+                {
+                    if (value is string s)
+                    {
+                        if (value != null)
+                        {
+                            if (!new PasswordCheckerService().IsSafePassword(s))
+                            {
+                                throw new ValidationException(propName, "Password is not safe");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new ValidationException(propName, $"Property {propName} has {nameof(SafePasswordAttribute)} but is not a string. Is: {value?.GetType()}");
                     }
                 }
             }

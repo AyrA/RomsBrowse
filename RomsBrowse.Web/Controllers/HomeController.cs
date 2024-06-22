@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class HomeController(RomSearchService searchService, PlatformService platformService) : BaseController
+    public class HomeController(UserService userService, RomSearchService searchService, PlatformService platformService) : BaseController(userService)
     {
         public IActionResult Index()
         {

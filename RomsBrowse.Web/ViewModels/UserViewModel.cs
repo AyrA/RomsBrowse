@@ -1,9 +1,9 @@
 ﻿namespace RomsBrowse.Web.ViewModels
 {
-    public class UserViewModel(Guid userId)
+    public class UserViewModel(string? username)
     {
-        public bool IsLoggedIn => UserId != Guid.Empty;
+        public bool IsLoggedIn => UserName != null;
 
-        public Guid UserId { get; } = userId;
+        public string? UserName { get; } = username;
     }
 }
