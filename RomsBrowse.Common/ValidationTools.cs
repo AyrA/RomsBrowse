@@ -127,7 +127,7 @@ namespace RomsBrowse.Common
                         throw new ValidationException(propName, $"Property {propName} has {nameof(StringLengthAttribute)} but is not a string. Is: {value?.GetType()}");
                     }
                 }
-                else if (attr is SafePasswordAttribute pa)
+                else if (attr is SafePasswordAttribute)
                 {
                     if (value is string s)
                     {
@@ -142,6 +142,32 @@ namespace RomsBrowse.Common
                     else
                     {
                         throw new ValidationException(propName, $"Property {propName} has {nameof(SafePasswordAttribute)} but is not a string. Is: {value?.GetType()}");
+                    }
+                }
+                else if (attr is ValidEnumAttribute ea)
+                {
+                    var t = (value?.GetType())
+                        ?? throw new ValidationException(propName, $"Property {propName} has {nameof(ValidEnumAttribute)} but is null");
+
+                    if (!t.IsEnum)
+                    {
+                        throw new ValidationException(propName, $"Property {propName} has {nameof(ValidEnumAttribute)} but is not an enum type");
+                    }
+                    if (Enum.GetUnderlyingType(t) != typeof(int))
+                    {
+                        throw new InvalidOperationException("Enum check currently only works for enum values with a 32 bit signed integer underlying type");
+                    }
+
+                    int allFlags = 0;
+                    int checkValue = Convert.ToInt32(value);
+                    foreach (var v in Enum.GetValuesAsUnderlyingType(t))
+                    {
+                        allFlags |= Convert.ToInt32(v);
+                    }
+
+                    if (allFlags != (allFlags | checkValue))
+                    {
+                        throw new ValidationException(propName, $"Property {propName} has invalid enum flags value");
                     }
                 }
             }

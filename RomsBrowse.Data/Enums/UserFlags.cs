@@ -5,6 +5,7 @@
     {
         Normal = 0,
         Locked = 1,
-        Admin = Locked << 1
+        Admin = Locked << 1,
+        NoDelete = Admin << 1
     }
 }

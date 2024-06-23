@@ -10,10 +10,10 @@ namespace RomsBrowse.Web.ViewModels
         public int GameId { get; set; }
 
         [Required]
-        public IFormFile Screenshot { get; set; }
+        public IFormFile? Screenshot { get; set; }
 
         [Required]
-        public IFormFile SaveState { get; set; }
+        public IFormFile? SaveState { get; set; }
 
         [MemberNotNull(nameof(SaveState), nameof(Screenshot))]
         public void Validate()
