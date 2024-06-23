@@ -8,18 +8,24 @@ namespace RomsBrowse.Web.Controllers
     public class AccountController : BaseController
     {
         private readonly UserService _userService;
+        private readonly SettingsService _settingsService;
 
-        public AccountController(UserService userService) : base(userService)
+        public AccountController(UserService userService, SettingsService settingsService) : base(userService)
         {
             _userService = userService;
+            _settingsService = settingsService;
         }
 
         [HttpGet]
-        public IActionResult Register()
+        public async Task<IActionResult> Register()
         {
             if (IsLoggedIn)
             {
-                return Redirect("/");
+                return RedirectBack();
+            }
+            if (!await CanCreateAccount())
+            {
+                return RedirectToAction("RegisterDisabled");
             }
             return View();
         }
@@ -27,11 +33,15 @@ namespace RomsBrowse.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            model.UserCreated = false;
             if (IsLoggedIn)
             {
-                return Redirect("/");
+                return RedirectBack();
             }
+            if (!await CanCreateAccount())
+            {
+                return RedirectToAction("RegisterDisabled");
+            }
+            model.UserCreated = false;
             try
             {
                 model.Validate();
@@ -70,14 +80,18 @@ namespace RomsBrowse.Web.Controllers
         {
             if (IsLoggedIn)
             {
-                return Redirect("/");
+                return RedirectBack();
             }
-            return View();
+            return View(new SignInViewModel() { RedirectUrl = ReturnUrl });
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(SignInModel model)
+        public async Task<IActionResult> Login(SignInViewModel model)
         {
+            if (IsLoggedIn)
+            {
+                return RedirectBack();
+            }
             try
             {
                 model.Validate();
@@ -91,18 +105,24 @@ namespace RomsBrowse.Web.Controllers
             if (!verify.IsValid)
             {
                 SetErrorMessage("Invalid username or password");
-                return View();
+                return View(model);
             }
             await _userService.Ping(verify.Username);
             await HttpContext.SignInAsync(_userService.GetPrincipal(verify.Username));
-            return Redirect("/");
+            return RedirectBack();
         }
 
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync();
-            return Redirect("/");
+            return RedirectBack();
+        }
+
+        private async Task<bool> CanCreateAccount()
+        {
+            return _settingsService.GetValue<bool>(SettingsService.KnownSettings.AllowRegister)
+                || !await _userService.HasAdmin();
         }
     }
 }

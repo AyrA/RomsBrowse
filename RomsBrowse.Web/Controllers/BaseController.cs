@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using RomsBrowse.Common.Interfaces;
@@ -13,6 +14,28 @@ namespace RomsBrowse.Web.Controllers
         protected string? UserName => User.Identity?.Name;
 
         protected bool IsLoggedIn => User.Identity?.IsAuthenticated ?? false;
+
+        protected string CurrentUrl => HttpContext.Request.GetEncodedPathAndQuery();
+
+        protected string? ReturnUrl
+        {
+            get
+            {
+                var url = HttpContext.Request.Query["returnUrl"].FirstOrDefault();
+                if (url != null)
+                {
+                    try
+                    {
+                        return new Uri(new Uri("http://localhost/"), url).PathAndQuery;
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                }
+                return null;
+            }
+        }
 
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
@@ -46,6 +69,26 @@ namespace RomsBrowse.Web.Controllers
             }
             model?.ClearSensitiveData();
             base.OnActionExecuted(context);
+        }
+
+        /// <summary>
+        /// Redirect to login page,
+        /// adding information to redirect back to the current location into the URL
+        /// </summary>
+        /// <returns>Redirection</returns>
+        protected RedirectToActionResult RedirectToLogin()
+        {
+            return RedirectToAction("Login", "Account", new { returnUrl = CurrentUrl });
+        }
+
+        /// <summary>
+        /// Redirects back to the action where <see cref="RedirectToLogin"/>
+        /// was previously called.
+        /// </summary>
+        /// <returns>Redirection</returns>
+        protected RedirectResult RedirectBack()
+        {
+            return Redirect(ReturnUrl ?? "/");
         }
 
         protected void SetErrorMessage(string message)

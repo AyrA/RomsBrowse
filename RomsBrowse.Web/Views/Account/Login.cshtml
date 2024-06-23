@@ -1,4 +1,5 @@
-﻿@{
+﻿@model SignInViewModel
+@{
     ViewData["Title"] = "Login";
 }
 <h1>@ViewData["Title"]</h1>
@@ -8,8 +9,9 @@
         <div class="col-12">
             <form method="post">
                 <div class="input-group">
-                    <input type="text" class="form-control" name="Username" placeholder="Username" required />
-                    <input type="password" class="form-control" name="Password" placeholder="Password" required />
+                    <input type="hidden" asp-for="RedirectUrl" />
+                    <input type="text" class="form-control" asp-for="Username" placeholder="Username" required />
+                    <input type="password" class="form-control" asp-for="Password" placeholder="Password" required />
                     <input type="submit" class="btn btn-primary" value="Log in" />
                 </div>
             </form>
@@ -17,8 +19,9 @@
     </div>
     <div class="d-sm-none mb-1">
         <form method="post">
-            <input type="text" name="Username" class="form-control mb-1" placeholder="Username" required />
-            <input type="password" name="Password" class="form-control mb-1" placeholder="Password" required />
+            <input type="hidden" asp-for="RedirectUrl" />
+            <input type="text" class="form-control" asp-for="Username" placeholder="Username" required />
+            <input type="password" class="form-control" asp-for="Password" placeholder="Password" required />
             <input type="submit" class="btn btn-primary" value="Log in" />
         </form>
     </div>

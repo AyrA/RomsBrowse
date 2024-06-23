@@ -6,11 +6,15 @@ using System.Text;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class RomController(RomSearchService searchService, SaveStateService saveStateService, EmulatorCachingService emuCache) : Controller
+    public class RomController(UserService userService, RomSearchService searchService, SettingsService settingsService, SaveStateService saveStateService, EmulatorCachingService emuCache) : BaseController(userService)
     {
         [Route("{controller}/{action}/{id}/{fileName}")]
         public async Task<IActionResult> Get(int id, string fileName)
         {
+            if (!CanPlay())
+            {
+                return RedirectToLogin();
+            }
             if (id <= 0 || string.IsNullOrWhiteSpace(fileName))
             {
                 return NotFound();
@@ -26,6 +30,10 @@ namespace RomsBrowse.Web.Controllers
 
         public async Task<IActionResult> Play(int? id)
         {
+            if (!CanPlay())
+            {
+                return RedirectToLogin();
+            }
             if (id == null || id.Value <= 0)
             {
                 return NotFound();
@@ -49,6 +57,10 @@ namespace RomsBrowse.Web.Controllers
             if (id <= 0)
             {
                 return NotFound();
+            }
+            if (!CanPlay())
+            {
+                return RedirectToLogin();
             }
             var rom = await searchService.GetRom(id);
             if (rom == null)
@@ -74,9 +86,9 @@ EJS_defaultOptions = {{
 
         public async Task<IActionResult> SaveState(SaveStateModel model)
         {
-            if (!(User.Identity?.IsAuthenticated ?? false))
+            if (!CanPlay())
             {
-                HttpContext.Response.StatusCode = 403;
+                HttpContext.Response.StatusCode = 401;
                 return Json(new { Success = false, Error = "Saving progrsss on the server requires an active session" });
             }
             try
@@ -94,7 +106,7 @@ EJS_defaultOptions = {{
 
             try
             {
-                await saveStateService.Save(User.Identity.Name!, model.GameId, img, data);
+                await saveStateService.Save(UserName!, model.GameId, img, data);
             }
             catch (Exception ex)
             {
@@ -103,6 +115,11 @@ EJS_defaultOptions = {{
             }
 
             return Json(new { Success = true });
+        }
+
+        public bool CanPlay()
+        {
+            return IsLoggedIn || settingsService.GetValue<bool>(SettingsService.KnownSettings.AnonymousPlay);
         }
     }
 }

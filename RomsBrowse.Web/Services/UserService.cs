@@ -64,8 +64,13 @@ namespace RomsBrowse.Web.Services
             logger.LogInformation("Running User cleanup. Removing entries older than {Cutoff}", maxAge);
             var cutoff = DateTime.UtcNow.Subtract(maxAge);
             return
-                ctx.SaveStates.Where(m => m.User.LastActivity < cutoff).ExecuteDelete() +
-                ctx.Users.Where(m => m.LastActivity < cutoff).ExecuteDelete();
+                ctx.SaveStates.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(Data.Enums.UserFlags.Admin) && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete() +
+                ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(Data.Enums.UserFlags.Admin) && !m.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete();
+        }
+
+        public async Task<bool> HasAdmin()
+        {
+            return await ctx.Users.AnyAsync(m => m.Flags.HasFlag(Data.Enums.UserFlags.Admin));
         }
 
         public async Task<AccountVerifyModel> VerifyAccount(string username, string password)
@@ -74,21 +79,20 @@ namespace RomsBrowse.Web.Services
             ArgumentException.ThrowIfNullOrEmpty(password);
 
             var user = ctx.Users.FirstOrDefault(m => m.Username == username);
-            if (user == null)
+            if ((user != null && user.Flags.HasFlag(Data.Enums.UserFlags.Admin)) || !user.Flags.HasFlag(Data.Enums.UserFlags.Locked))
             {
-                return new(true, username);
-            }
-            if (passwordService.CheckPassword(password, user.Hash, out var update))
-            {
-                user.LastActivity = DateTime.UtcNow;
-                if (update)
+                if (passwordService.CheckPassword(password, user.Hash, out var update))
                 {
-                    user.Hash = passwordService.HashPassword(password);
+                    user.LastActivity = DateTime.UtcNow;
+                    if (update)
+                    {
+                        user.Hash = passwordService.HashPassword(password);
+                    }
+                    await ctx.SaveChangesAsync();
+                    return new(true, user.Username);
                 }
-                await ctx.SaveChangesAsync();
-                return new(true, user.Username);
             }
-            return new(true, username);
+            return new(false, username);
         }
 
         public ClaimsPrincipal GetPrincipal(string username)

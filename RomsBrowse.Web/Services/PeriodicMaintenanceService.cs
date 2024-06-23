@@ -5,7 +5,6 @@ namespace RomsBrowse.Web.Services
     [AutoDIHostedService]
     public class PeriodicMaintenanceService(IServiceProvider provider) : IHostedService, IDisposable
     {
-        private static readonly TimeSpan maxAge = TimeSpan.FromDays(30);
         private Timer? _timer;
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -30,8 +29,13 @@ namespace RomsBrowse.Web.Services
         private void Callback(object? state)
         {
             using var scope = provider.CreateScope();
-            scope.ServiceProvider.GetRequiredService<SaveStateService>().Cleanup(maxAge);
-            scope.ServiceProvider.GetRequiredService<UserService>().Cleanup(maxAge);
+            var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
+
+            var userAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.UserExpiration);
+            var ssAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration);
+
+            scope.ServiceProvider.GetRequiredService<SaveStateService>().Cleanup(ssAge);
+            scope.ServiceProvider.GetRequiredService<UserService>().Cleanup(userAge);
         }
     }
 }

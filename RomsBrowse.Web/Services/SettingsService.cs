@@ -2,19 +2,30 @@
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
+using RomsBrowse.Web.Extensions;
 
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
     public class SettingsService(RomsContext ctx)
     {
+        public static class KnownSettings
+        {
+            public const string AdminToken = nameof(AdminToken);
+            public const string AllowRegister = nameof(AllowRegister);
+            public const string AnonymousPlay = nameof(AnonymousPlay);
+            public const string MaxSaveStatesPerUser = nameof(MaxSaveStatesPerUser);
+            public const string SaveStateExpiration = nameof(SaveStateExpiration);
+            public const string UserExpiration = nameof(UserExpiration);
+        }
+
         private static readonly Dictionary<string, string?> cache = new(StringComparer.InvariantCultureIgnoreCase);
 
         private static void SetCache(RomsContext ctx)
         {
             if (cache.Count == 0)
             {
-                foreach (var setting in ctx.Settings)
+                foreach (var setting in ctx.Settings.AsNoTracking())
                 {
                     cache.Add(setting.Name, setting.Value);
                 }
@@ -22,10 +33,10 @@ namespace RomsBrowse.Web.Services
         }
 
         /// <summary>
-        /// Gets or sets settings
+        /// Gets or sets raw settings
         /// </summary>
         /// <param name="name">Setting name</param>
-        /// <returns>Setting value. Null if setting was not found</returns>
+        /// <returns>Setting value. null if setting was not found</returns>
         public string? this[string name]
         {
             get
@@ -81,18 +92,43 @@ namespace RomsBrowse.Web.Services
         }
 
         /// <summary>
-        /// Tries to get a setting value
+        /// Gets a parsed setting value
         /// </summary>
+        /// <typeparam name="T">Setting value type</typeparam>
         /// <param name="name">Setting name</param>
-        /// <param name="value">Setting value</param>
-        /// <returns>true, if setting was read, false if not found</returns>
-        public bool TryGetSetting(string name, out string? value)
+        /// <returns>Setting value, or default if not found</returns>
+        public T? GetValue<T>(string name)
         {
             lock (cache)
             {
                 SetCache(ctx);
-                return cache.TryGetValue(name, out value);
+                if (cache.TryGetValue(name, out var s) && s != null)
+                {
+                    return s.FromJson<T>();
+                }
+                return default;
             }
+        }
+
+        /// <summary>
+        /// Tries to get a parsed setting value
+        /// </summary>
+        /// <param name="name">Setting name</param>
+        /// <param name="value">Setting value receiver</param>
+        /// <returns>true, if setting was read, false if not found</returns>
+        public bool TryGetSetting<T>(string name, out T? value)
+        {
+            lock (cache)
+            {
+                SetCache(ctx);
+                if (cache.TryGetValue(name, out var raw))
+                {
+                    value = raw == null ? default : raw.FromJson<T>();
+                    return true;
+                }
+            }
+            value = default;
+            return false;
         }
 
         /// <summary>
@@ -100,13 +136,11 @@ namespace RomsBrowse.Web.Services
         /// </summary>
         /// <param name="name">Setting name</param>
         /// <param name="value">Setting value</param>
-        /// <remarks>
-        /// This is an alias for the setter at <see cref="this[string]"/>
-        /// </remarks>
-        public void AddOrUpdate(string name, string? value)
+        public void AddOrUpdate<T>(string name, T value)
         {
             ArgumentNullException.ThrowIfNull(name);
-            this[name] = value;
+            var parsed = value == null ? "null" : value.ToJson();
+            this[name] = parsed;
         }
 
         /// <summary>
@@ -115,15 +149,16 @@ namespace RomsBrowse.Web.Services
         /// <param name="name">Setting name</param>
         /// <param name="value">Setting value</param>
         /// <returns>true if added, false if it already exists</returns>
-        public bool AddDefault(string name, string? value)
+        public bool AddDefault<T>(string name, T value)
         {
             ArgumentNullException.ThrowIfNull(name);
             lock (cache)
             {
+                var parsed = value == null ? "null" : value.ToJson();
                 SetCache(ctx);
                 if (!cache.ContainsKey(name))
                 {
-                    this[name] = value;
+                    this[name] = parsed;
                     return true;
                 }
             }

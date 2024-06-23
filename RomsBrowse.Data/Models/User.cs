@@ -3,6 +3,7 @@ using RomsBrowse.Common;
 using RomsBrowse.Common.Interfaces;
 using RomsBrowse.Data.Enums;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace RomsBrowse.Data.Models
 {
@@ -23,6 +24,15 @@ namespace RomsBrowse.Data.Models
         public DateTime LastActivity { get; set; }
 
         public UserFlags Flags { get; set; }
+
+        [NotMapped]
+        public bool CanDelete => !Flags.HasFlag(UserFlags.Admin) && !Flags.HasFlag(UserFlags.NoExpireUser);
+
+        [NotMapped]
+        public bool IsAdmin => Flags.HasFlag(UserFlags.Admin);
+
+        [NotMapped]
+        public bool CanSignIn => IsAdmin || !Flags.HasFlag(UserFlags.Locked);
 
         public virtual ICollection<SaveState> SaveStates { get; set; }
 

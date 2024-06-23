@@ -5,7 +5,7 @@ using RomsBrowse.Data;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class SaveStateService(RomsContext ctx, ILogger<SaveStateService> logger)
+    public class SaveStateService(RomsContext ctx, SettingsService ss, ILogger<SaveStateService> logger)
     {
         public async Task Save(string username, int gameId, byte[] imageData, byte[] stateData)
         {
@@ -24,6 +24,12 @@ namespace RomsBrowse.Web.Services
                 .FirstOrDefaultAsync(m => m.UserId == user.Id && m.RomFileId == rom.Id);
             if (state == null)
             {
+                //Keep last "n" states, and delete the rest
+                await ctx.SaveStates
+                    .Where(m => m.UserId == user.Id)
+                    .OrderByDescending(m => m.Created)
+                    .Skip(ss.GetValue<int>(SettingsService.KnownSettings.MaxSaveStatesPerUser))
+                    .ExecuteDeleteAsync();
                 state = new()
                 {
                     UserId = user.Id,
@@ -54,7 +60,7 @@ namespace RomsBrowse.Web.Services
         {
             logger.LogInformation("Running SaveState cleanup. Removing entries older than {Cutoff}", maxAge);
             var cutoff = DateTime.UtcNow.Subtract(maxAge);
-            return ctx.SaveStates.Where(m => m.Created < cutoff).ExecuteDelete();
+            return ctx.SaveStates.Where(m => m.Created < cutoff && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireSaveState)).ExecuteDelete();
         }
     }
 }

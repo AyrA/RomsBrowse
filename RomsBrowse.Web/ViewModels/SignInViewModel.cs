@@ -5,13 +5,20 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace RomsBrowse.Web.ViewModels
 {
-    public class SignInModel : IValidateable
+    public class SignInViewModel : IValidateable, ISensitiveData
     {
         [Required]
         public string? Username { get; set; }
 
         [Required]
         public string? Password { get; set; }
+
+        public string? RedirectUrl { get; set; }
+
+        public void ClearSensitiveData()
+        {
+            Password = null;
+        }
 
         [MemberNotNull(nameof(Username), nameof(Password))]
         public void Validate()

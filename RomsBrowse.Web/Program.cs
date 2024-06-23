@@ -86,6 +86,7 @@ app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 SetThreadLanguage("de-ch");
 await MigrateAsync();
 await InitDataFields();
+await InitDefaultSettings();
 
 await app.RunAsync();
 
@@ -98,6 +99,29 @@ async Task InitDataFields()
     var platformService = scope.ServiceProvider.GetRequiredService<PlatformService>();
     var counts = await platformService.GetAllRomCount();
     menuService.SetMenuItems(await platformService.GetPlatforms(false), counts);
+}
+
+async Task InitDefaultSettings()
+{
+    using var scope = app.Services.CreateScope();
+    var user = scope.ServiceProvider.GetRequiredService<UserService>();
+    var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
+
+    //If no admin exists, change admin token on every start
+    //Delete token if admin user exists
+    if (!await user.HasAdmin())
+    {
+        ss.AddOrUpdate(SettingsService.KnownSettings.AdminToken, Guid.NewGuid());
+    }
+    else
+    {
+        ss.Delete(SettingsService.KnownSettings.AdminToken);
+    }
+    ss.AddDefault(SettingsService.KnownSettings.AllowRegister, false);
+    ss.AddDefault(SettingsService.KnownSettings.AnonymousPlay, false);
+    ss.AddDefault(SettingsService.KnownSettings.MaxSaveStatesPerUser, 10);
+    ss.AddDefault(SettingsService.KnownSettings.SaveStateExpiration, TimeSpan.FromDays(30));
+    ss.AddDefault(SettingsService.KnownSettings.UserExpiration, TimeSpan.FromDays(30));
 }
 
 async Task MigrateAsync()
