@@ -44,6 +44,7 @@ namespace RomsBrowse.Web.Services
             try
             {
                 await ctx.SaveChangesAsync();
+                hasAdmin = null;
                 return true;
             }
             catch
@@ -135,9 +136,22 @@ namespace RomsBrowse.Web.Services
 
         public async Task<bool> SetFlags(string username, UserFlags flags)
         {
-            return 0 < await ctx.Users
-                .Where(m => m.Username == username)
-                .ExecuteUpdateAsync(m => m.SetProperty(p => p.Flags, flags));
+            var u = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            if (u == null)
+            {
+                return false;
+            }
+            u.Flags = flags;
+            if (flags.HasFlag(UserFlags.Admin))
+            {
+                hasAdmin = true;
+            }
+            else
+            {
+                hasAdmin = null;
+            }
+            await ctx.SaveChangesAsync();
+            return true;
         }
 
         public async Task<bool> AddFlag(string username, UserFlags flags)
@@ -148,11 +162,13 @@ namespace RomsBrowse.Web.Services
                 return false;
             }
             u.Flags |= flags;
+            if (u.Flags.HasFlag(UserFlags.Admin))
+            {
+                hasAdmin = true;
+            }
             await ctx.SaveChangesAsync();
             return true;
         }
-
-
 
         public async Task<bool> RemoveFlag(string username, UserFlags flags)
         {
@@ -162,6 +178,10 @@ namespace RomsBrowse.Web.Services
                 return false;
             }
             u.Flags &= ~flags;
+            if (flags.HasFlag(UserFlags.Admin))
+            {
+                hasAdmin = null;
+            }
             await ctx.SaveChangesAsync();
             return true;
         }

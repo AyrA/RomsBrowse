@@ -91,6 +91,11 @@ namespace RomsBrowse.Web.Controllers
                         return View(model);
                     }
                 }
+                if (!model.HasAdmin && !createAsAdmin)
+                {
+                    SetErrorMessage("Regular users can only be created after the first administrator has been created");
+                    return View(model);
+                }
 
                 if (await _userService.Create(model.Username, model.Password1))
                 {
@@ -98,6 +103,8 @@ namespace RomsBrowse.Web.Controllers
                     {
                         await _userService.SetFlags(model.Username, UserFlags.Admin);
                         _settingsService.Delete(SettingsService.KnownSettings.AdminToken);
+                        ViewData["HasAdmin"] = true;
+                        model.HasAdmin = true;
                     }
                     model.UserCreated = true;
                 }
