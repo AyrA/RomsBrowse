@@ -79,7 +79,7 @@ namespace RomsBrowse.Web.Services
             ArgumentException.ThrowIfNullOrEmpty(password);
 
             var user = ctx.Users.FirstOrDefault(m => m.Username == username);
-            if ((user != null && user.Flags.HasFlag(Data.Enums.UserFlags.Admin)) || !user.Flags.HasFlag(Data.Enums.UserFlags.Locked))
+            if (user != null && user.CanSignIn)
             {
                 if (passwordService.CheckPassword(password, user.Hash, out var update))
                 {
