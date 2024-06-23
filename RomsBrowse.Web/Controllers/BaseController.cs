@@ -11,12 +11,29 @@ namespace RomsBrowse.Web.Controllers
 {
     public abstract class BaseController(UserService userService) : Controller
     {
+        /// <summary>
+        /// Gets the user name of the currently logged in user
+        /// </summary>
+        /// <remarks><see cref="IsLoggedIn"/> should be checked first</remarks>
         protected string? UserName => User.Identity?.Name;
 
+        /// <summary>
+        /// Gets if the user is logged in
+        /// </summary>
         protected bool IsLoggedIn => User.Identity?.IsAuthenticated ?? false;
 
+        /// <summary>
+        /// Gets the URL the user currently requested, including query parameter
+        /// </summary>
         protected string CurrentUrl => HttpContext.Request.GetEncodedPathAndQuery();
 
+        /// <summary>
+        /// Gets the "returnUrl" query param value, if there is one
+        /// </summary>
+        /// <remarks>
+        /// This will ensure that the URL is relative,
+        /// cutting off any origin that may be present
+        /// </remarks>
         protected string? ReturnUrl
         {
             get
