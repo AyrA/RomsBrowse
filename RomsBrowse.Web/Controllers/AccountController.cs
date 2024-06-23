@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using RomsBrowse.Data.Enums;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 
@@ -7,6 +8,8 @@ namespace RomsBrowse.Web.Controllers
 {
     public class AccountController : BaseController
     {
+        private static readonly SemaphoreSlim _registerLock = new(1);
+
         private readonly UserService _userService;
         private readonly SettingsService _settingsService;
 
@@ -27,7 +30,11 @@ namespace RomsBrowse.Web.Controllers
             {
                 return RedirectToAction("RegisterDisabled");
             }
-            return View();
+            var vm = new RegisterViewModel()
+            {
+                HasAdmin = await _userService.HasAdmin()
+            };
+            return View(vm);
         }
 
         [HttpPost]
@@ -42,6 +49,7 @@ namespace RomsBrowse.Web.Controllers
                 return RedirectToAction("RegisterDisabled");
             }
             model.UserCreated = false;
+            model.HasAdmin = await _userService.HasAdmin();
             try
             {
                 model.Validate();
@@ -51,15 +59,46 @@ namespace RomsBrowse.Web.Controllers
                 SetErrorMessage(ex);
                 return View(model);
             }
-            if (await _userService.Exists(model.Username))
-            {
-                SetErrorMessage("User already exists");
-                return View(model);
-            }
             try
             {
+                await _registerLock.WaitAsync();
+
+                if (await _userService.Exists(model.Username))
+                {
+                    SetErrorMessage("User already exists");
+                    return View(model);
+                }
+
+                //Handle AdminToken
+                bool createAsAdmin = false;
+                if (model.AdminToken.HasValue)
+                {
+                    if (_settingsService.TryGetSetting(SettingsService.KnownSettings.AdminToken, out Guid? token) && token.HasValue)
+                    {
+                        if (token.Value == model.AdminToken.Value)
+                        {
+                            createAsAdmin = true;
+                        }
+                        else
+                        {
+                            SetErrorMessage("Supplied token does not match");
+                            return View(model);
+                        }
+                    }
+                    else
+                    {
+                        SetErrorMessage("Token does not exist");
+                        return View(model);
+                    }
+                }
+
                 if (await _userService.Create(model.Username, model.Password1))
                 {
+                    if (createAsAdmin)
+                    {
+                        await _userService.SetFlags(model.Username, UserFlags.Admin);
+                        _settingsService.Delete(SettingsService.KnownSettings.AdminToken);
+                    }
                     model.UserCreated = true;
                 }
                 else
@@ -71,6 +110,10 @@ namespace RomsBrowse.Web.Controllers
             {
                 SetErrorMessage(ex);
                 return View(model);
+            }
+            finally
+            {
+                _registerLock.Release();
             }
             return View(model);
         }

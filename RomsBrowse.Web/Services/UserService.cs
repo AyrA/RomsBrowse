@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
+using RomsBrowse.Data.Enums;
 using RomsBrowse.Data.Models;
 using RomsBrowse.Web.ServiceModels;
 using System.Security.Claims;
@@ -12,6 +13,11 @@ namespace RomsBrowse.Web.Services
     [AutoDIRegister(AutoDIType.Scoped)]
     public class UserService(RomsContext ctx, IPasswordCheckerService passwordChecker, PasswordService passwordService, ILogger<UserService> logger)
     {
+        /// <summary>
+        /// Cache value for the <see cref="HasAdmin"/> method
+        /// </summary>
+        private static bool? hasAdmin = null;
+
         public async Task<bool> Exists(string username)
         {
             return !string.IsNullOrEmpty(username) && await ctx.Users.AnyAsync(m => m.Username == username);
@@ -50,10 +56,15 @@ namespace RomsBrowse.Web.Services
         public async Task Delete(string userName)
         {
             var user = await ctx.Users
+                .Include(m => m.SaveStates)
                 .FirstOrDefaultAsync(m => m.Username == userName);
             if (user != null)
             {
-                await ctx.SaveStates.Where(m => m.UserId == user.Id).ExecuteDeleteAsync();
+                if (user.IsAdmin)
+                {
+                    throw new InvalidOperationException("Cannot delete an administrator. Remove the flag first");
+                }
+                ctx.SaveStates.RemoveRange(user.SaveStates);
                 ctx.Users.Remove(user);
                 await ctx.SaveChangesAsync();
             }
@@ -63,14 +74,24 @@ namespace RomsBrowse.Web.Services
         {
             logger.LogInformation("Running User cleanup. Removing entries older than {Cutoff}", maxAge);
             var cutoff = DateTime.UtcNow.Subtract(maxAge);
-            return
+            var total =
                 ctx.SaveStates.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(Data.Enums.UserFlags.Admin) && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete() +
                 ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(Data.Enums.UserFlags.Admin) && !m.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete();
+            if (total > 0)
+            {
+                hasAdmin = false;
+            }
+            return total;
         }
 
         public async Task<bool> HasAdmin()
         {
-            return await ctx.Users.AnyAsync(m => m.Flags.HasFlag(Data.Enums.UserFlags.Admin));
+            if (hasAdmin.HasValue)
+            {
+                return hasAdmin.Value;
+            }
+            hasAdmin = await ctx.Users.AnyAsync(m => m.Flags.HasFlag(Data.Enums.UserFlags.Admin));
+            return hasAdmin.Value;
         }
 
         public async Task<AccountVerifyModel> VerifyAccount(string username, string password)
@@ -110,6 +131,39 @@ namespace RomsBrowse.Web.Services
             return 0 < await ctx.Users
                 .Where(m => m.Username == username)
                 .ExecuteUpdateAsync(m => m.SetProperty(p => p.LastActivity, DateTime.UtcNow));
+        }
+
+        public async Task<bool> SetFlags(string username, UserFlags flags)
+        {
+            return 0 < await ctx.Users
+                .Where(m => m.Username == username)
+                .ExecuteUpdateAsync(m => m.SetProperty(p => p.Flags, flags));
+        }
+
+        public async Task<bool> AddFlag(string username, UserFlags flags)
+        {
+            var u = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            if (u == null)
+            {
+                return false;
+            }
+            u.Flags |= flags;
+            await ctx.SaveChangesAsync();
+            return true;
+        }
+
+
+
+        public async Task<bool> RemoveFlag(string username, UserFlags flags)
+        {
+            var u = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            if (u == null)
+            {
+                return false;
+            }
+            u.Flags &= ~flags;
+            await ctx.SaveChangesAsync();
+            return true;
         }
     }
 }

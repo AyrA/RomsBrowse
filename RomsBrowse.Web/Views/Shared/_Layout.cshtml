@@ -6,6 +6,15 @@
     var errorMessage = ViewData["ErrorMessage"]?.ToString();
     var tokens = antiforgery.GetTokens(Context);
     var user = ViewData["User"] as UserViewModel ?? new UserViewModel(null);
+    var hasAdmin = ViewData["HasAdmin"] as bool? ?? false;
+    if (!hasAdmin)
+    {
+        if (errorMessage == null)
+        {
+            errorMessage = "";
+        }
+        errorMessage = "There is no administrator user on this system. Please register one. " + errorMessage;
+    }
 }
 <!DOCTYPE html>
 <html data-token="@Json.Serialize(tokens).ToString()" lang="en">

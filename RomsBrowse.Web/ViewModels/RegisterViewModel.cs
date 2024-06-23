@@ -16,10 +16,15 @@ namespace RomsBrowse.Web.ViewModels
         [Required]
         public string? Password2 { get; set; }
 
+        public Guid? AdminToken { get; set; }
+
         public bool UserCreated { get; set; }
+
+        public bool HasAdmin { get; set; }
 
         public void ClearSensitiveData()
         {
+            AdminToken = null;
             Password1 = null;
             Password2 = null;
         }

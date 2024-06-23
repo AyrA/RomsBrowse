@@ -4,7 +4,7 @@
 }
 <h1>@ViewData["Title"]</h1>
 
-@if (Model?.UserCreated ?? false)
+@if (Model.UserCreated)
 {
     <div class="alert alert-success">
         User created. You can now sign in.
@@ -12,10 +12,24 @@
 }
 else
 {
+    if (!Model.HasAdmin)
+    {
+        <div class="alert alert-warning">
+            This system has no admin user,
+            and one must be created before other user accounts can be created.<br />
+            Please fill in the value of the admin token into the appropriate textbox.
+            The token can be found in the settings table until an admin exists,
+            and it changes on evey application restart.
+        </div>
+    }
     <div class="mb-3">
         <div class="row d-none d-lg-block mb-1">
             <div class="col-12">
                 <form method="post">
+                    @if (!Model.HasAdmin)
+                    {
+                        <input asp-for="AdminToken" class="form-control mb-3" placeholder="Admin token" required />
+                    }
                     <div class="input-group">
                         <input type="text" class="form-control" asp-for="Username" placeholder="Username" required />
                         <input type="password" class="form-control" asp-for="Password1" placeholder="Password" required />
@@ -27,6 +41,10 @@ else
         </div>
         <div class="d-lg-none mb-1">
             <form method="post">
+                @if (!Model.HasAdmin)
+                {
+                    <input asp-for="AdminToken" class="form-control mb-1" placeholder="Admin token" required />
+                }
                 <input type="text" asp-for="Username" class="form-control mb-1" placeholder="Username" required />
                 <input type="password" asp-for="Password1" class="form-control mb-1" placeholder="Password" required />
                 <input type="password" asp-for="Password2" class="form-control mb-1" placeholder="Password" required />

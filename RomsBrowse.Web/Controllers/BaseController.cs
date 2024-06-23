@@ -62,6 +62,7 @@ namespace RomsBrowse.Web.Controllers
                 context.Result = new RedirectResult("/");
             }
             ViewData["User"] = new UserViewModel(UserName);
+            ViewData["HasAdmin"] = await userService.HasAdmin();
             await base.OnActionExecutionAsync(context, next);
         }
 
