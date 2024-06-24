@@ -56,12 +56,13 @@ namespace RomsBrowse.Web.Controllers
 
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            if (IsLoggedIn && !await userService.Exists(UserName!))
+            var user = await userService.Get(UserName!);
+            if (IsLoggedIn && (user == null || !user.CanSignIn))
             {
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 context.Result = new RedirectResult("/");
             }
-            ViewData["User"] = new UserViewModel(UserName);
+            ViewData["User"] = new UserViewModel(user);
             ViewData["HasAdmin"] = await userService.HasAdmin();
             await base.OnActionExecutionAsync(context, next);
         }

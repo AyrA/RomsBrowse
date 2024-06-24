@@ -1,9 +1,13 @@
-﻿namespace RomsBrowse.Web.ViewModels
-{
-    public class UserViewModel(string? username)
-    {
-        public bool IsLoggedIn => UserName != null;
+﻿using RomsBrowse.Data.Models;
 
-        public string? UserName { get; } = username;
+namespace RomsBrowse.Web.ViewModels
+{
+    public class UserViewModel(User? user)
+    {
+        public bool IsLoggedIn => user != null;
+
+        public bool IsAdmin => user?.IsAdmin ?? false;
+
+        public string? UserName { get; } = user?.Username;
     }
 }

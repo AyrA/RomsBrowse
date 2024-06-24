@@ -23,6 +23,13 @@ namespace RomsBrowse.Web.Services
             return !string.IsNullOrEmpty(username) && await ctx.Users.AnyAsync(m => m.Username == username);
         }
 
+        public async Task<User?> Get(string? username)
+        {
+            return string.IsNullOrEmpty(username)
+                ? null
+                : await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+        }
+
         public async Task<bool> Create(string username, string password)
         {
             ArgumentException.ThrowIfNullOrEmpty(username);

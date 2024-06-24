@@ -58,6 +58,10 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="Saves">Your saved games</a></li>
+                                    @if (user.IsAdmin)
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Settings" asp-action="Index">Application settings</a></li>
+                                    }
                                     <li><label class="dropdown-item" for="logoutForm">Logout</label></li>
                                 </ul>
                             </li>
