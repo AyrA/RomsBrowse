@@ -77,8 +77,8 @@ app.UseStaticFiles(new StaticFileOptions()
     DefaultContentType = "application/octet-stream"
 });
 app.UseRouting();
-app.UseAuthorization();
 app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 

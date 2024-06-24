@@ -118,18 +118,22 @@ namespace RomsBrowse.Web.Services
                         user.Hash = passwordService.HashPassword(password);
                     }
                     await ctx.SaveChangesAsync();
-                    return new(true, user.Username);
+                    return new(true, user);
                 }
             }
-            return new(false, username);
+            return new(false, null);
         }
 
-        public ClaimsPrincipal GetPrincipal(string username)
+        public ClaimsPrincipal GetPrincipal(User user)
         {
-            Claim[] claims = [
-                new Claim(ClaimTypes.Name, username),
+            List<Claim> claims = [
+                new Claim(ClaimTypes.Name, user.Username),
                 new Claim("CreatedAt", DateTime.UtcNow.ToString("O"), ClaimValueTypes.DateTime)
             ];
+            if (user.IsAdmin)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, nameof(UserFlags.Admin)));
+            }
             var ident = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             return new ClaimsPrincipal(ident);
         }

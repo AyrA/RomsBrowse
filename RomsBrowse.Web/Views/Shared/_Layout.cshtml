@@ -44,6 +44,14 @@
                                 Platforms
                             </a>
                             <ul class="dropdown-menu">
+                                @if(!menuService.HasPlatforms)
+                                {
+                                    <li class="p-2">
+                                        <b>No platforms exist.</b><br />
+                                        An administrator has to configure this application
+                                        before it can be used.
+                                    </li>
+                                }
                                 @foreach(var platform in menuService.Platforms)
                                 {
                                     <li><a class="dropdown-item" asp-controller="Home" asp-action="Platform" asp-route-id="@platform.Id">@platform.DisplayName (@platform.RomCount files)</a></li>

@@ -157,8 +157,8 @@ namespace RomsBrowse.Web.Controllers
                 SetErrorMessage("Invalid username or password");
                 return View(model);
             }
-            await _userService.Ping(verify.Username);
-            await HttpContext.SignInAsync(_userService.GetPrincipal(verify.Username));
+            await _userService.Ping(verify.User.Username);
+            await HttpContext.SignInAsync(_userService.GetPrincipal(verify.User));
             return RedirectBack();
         }
 

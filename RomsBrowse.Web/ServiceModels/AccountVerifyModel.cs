@@ -1,4 +1,13 @@
-﻿namespace RomsBrowse.Web.ServiceModels
+﻿using RomsBrowse.Data.Models;
+using System.Diagnostics.CodeAnalysis;
+
+namespace RomsBrowse.Web.ServiceModels
 {
-    public record AccountVerifyModel(bool IsValid, string Username);
+    public class AccountVerifyModel(bool isValid, User? user)
+    {
+        [MemberNotNullWhen(true, nameof(User))]
+        public bool IsValid => isValid && user != null;
+
+        public User? User => user;
+    }
 }

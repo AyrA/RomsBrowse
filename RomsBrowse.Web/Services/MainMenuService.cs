@@ -8,6 +8,8 @@ namespace RomsBrowse.Web.Services
     [AutoDIRegister(AutoDIType.Singleton)]
     public class MainMenuService
     {
+        public bool HasPlatforms => Platforms.Length > 0;
+
         public PlatformMenuModel[] Platforms { get; private set; } = [];
 
         public void SetMenuItems(IEnumerable<Platform> platforms, PlatformCountModel[] romCounts)

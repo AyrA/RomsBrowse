@@ -2,33 +2,46 @@
 @using RomsBrowse.Web.Services
 @inject MainMenuService menuService
 
-<div class="row d-none d-sm-block">
-    <form method="get" asp-controller="Home" asp-action="Search">
-        <div class="col-12">
-            <div class="input-group">
-                <input type="search" asp-For="Search" required class="form-control" placeholder="Search terms" />
-                <select asp-for="Platform" class="form-control">
-                    <option value="">All platforms</option>
-                    @foreach (var item in menuService.Platforms)
-                    {
-                        <option value="@item.Id">@item.DisplayName (@item.RomCount files)</option>
-                    }
-                </select>
-                <input type="submit" class="btn btn-primary" value="Search" />
+@if (menuService.HasPlatforms)
+{
+    <div class="row d-none d-sm-block">
+        <form method="get" asp-controller="Home" asp-action="Search">
+            <div class="col-12">
+                <div class="input-group">
+                    <input type="search" asp-For="Search" required class="form-control" placeholder="Search terms" />
+                    <select asp-for="Platform" class="form-control">
+                        <option value="">All platforms</option>
+                        @foreach (var item in menuService.Platforms)
+                        {
+                            <option value="@item.Id">@item.DisplayName (@item.RomCount files)</option>
+                        }
+                    </select>
+                    <input type="submit" class="btn btn-primary" value="Search" />
+                </div>
             </div>
-        </div>
-    </form>
-</div>
-<div class="d-sm-none">
-    <form method="get" asp-controller="Home" asp-action="Search">
-        <input type="search" asp-For="Search" required class="form-control mb-1" placeholder="Search terms" />
-        <select asp-for="Platform" class="form-control mb-1">
-            <option value="">All platforms</option>
-            @foreach (var item in menuService.Platforms)
-            {
-                <option value="@item.Id">@item.DisplayName (@item.RomCount files)</option>
-            }
-        </select>
-        <input type="submit" class="btn btn-primary mb-1" value="Search" />
-    </form>
-</div>
+        </form>
+    </div>
+    <div class="d-sm-none">
+        <form method="get" asp-controller="Home" asp-action="Search">
+            <input type="search" asp-For="Search" required class="form-control mb-1" placeholder="Search terms" />
+            <select asp-for="Platform" class="form-control mb-1">
+                <option value="">All platforms</option>
+                @foreach (var item in menuService.Platforms)
+                {
+                    <option value="@item.Id">@item.DisplayName (@item.RomCount files)</option>
+                }
+            </select>
+            <input type="submit" class="btn btn-primary mb-1" value="Search" />
+        </form>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning">
+        <b>No platforms exist</b><br />
+        ROM path has not been configured in the database,
+        or no platforms could be found under said path.
+        If you are an administrator,
+        log in and configure the application.
+    </div>
+}
