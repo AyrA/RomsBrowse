@@ -28,7 +28,7 @@ namespace RomsBrowse.Web.Controllers
             }
             if (!await CanCreateAccount())
             {
-                return RedirectToAction("RegisterDisabled");
+                return View("RegisterDisabled");
             }
             var vm = new RegisterViewModel()
             {
@@ -46,7 +46,7 @@ namespace RomsBrowse.Web.Controllers
             }
             if (!await CanCreateAccount())
             {
-                return RedirectToAction("RegisterDisabled");
+                return View("RegisterDisabled");
             }
             model.UserCreated = false;
             model.HasAdmin = await _userService.HasAdmin();
