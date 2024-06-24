@@ -17,6 +17,7 @@ namespace RomsBrowse.Web.Services
             public const string MaxSaveStatesPerUser = nameof(MaxSaveStatesPerUser);
             public const string SaveStateExpiration = nameof(SaveStateExpiration);
             public const string UserExpiration = nameof(UserExpiration);
+            public const string RomDirectory = nameof(RomDirectory);
         }
 
         private static readonly Dictionary<string, string?> cache = new(StringComparer.InvariantCultureIgnoreCase);

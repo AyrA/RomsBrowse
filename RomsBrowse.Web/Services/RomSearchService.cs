@@ -2,20 +2,28 @@
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public partial class RomSearchService(IConfiguration config, RomsContext ctx)
+    public partial class RomSearchService(SettingsService ss, RomsContext ctx)
     {
         private const int MaxResultCount = 100;
 
-        private readonly string rootDir = Path.GetFullPath(config.GetValue<string>("RomDir")
-            ?? throw new InvalidOperationException("'RomDir' not set"));
-
+        private readonly string? rootDir = ss.GetValue<string>(SettingsService.KnownSettings.RomDirectory);
 
         public int ResultLimit => MaxResultCount;
+
+        [MemberNotNull(nameof(rootDir))]
+        private void EnsureRoot()
+        {
+            if (string.IsNullOrWhiteSpace(rootDir))
+            {
+                throw new InvalidOperationException("ROM root directory has not been set");
+            }
+        }
 
         public async Task<RomFile[]> Search(string terms)
         {
@@ -60,6 +68,7 @@ namespace RomsBrowse.Web.Services
 
         public async Task<string?> GetRomPath(int id, string? fileName = null)
         {
+            EnsureRoot();
             var rom = await GetRom(id);
             if (rom == null || (fileName != null && rom.FileName != fileName))
             {

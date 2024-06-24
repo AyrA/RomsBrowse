@@ -4,22 +4,26 @@ using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
 using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.ServiceModels;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 
 namespace RomsBrowse.Web.Services
 {
-    [AutoDIHostedService]
-    public class RomGatherService(IServiceProvider provider, IConfiguration config, ILogger<RomGatherService> logger) : IHostedService
+    [AutoDIRegister(AutoDIType.Singleton)]
+    public class RomGatherService(IServiceProvider provider, ILogger<RomGatherService> logger)
     {
-        private readonly string rootDir = Path.GetFullPath(config.GetValue<string>("RomDir")
-            ?? throw new InvalidOperationException("'RomDir' not set"));
-
         private Thread? t = null;
+        private string? rootDir = null;
         private CancellationTokenSource? cts = null;
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public bool IsScanning => t != null || cts != null;
+
+        //[MemberNotNullWhen(true, nameof(rootDir))]
+        //private bool HasRootDir => !string.IsNullOrWhiteSpace(rootDir);
+
+        public void Scan()
         {
-            if (t != null)
+            if (IsScanning)
             {
                 throw new InvalidOperationException("A gathering task is already running");
             }
@@ -29,20 +33,15 @@ namespace RomsBrowse.Web.Services
             };
             cts = new();
             t.Start();
-            return Task.CompletedTask;
         }
 
-        public async Task StopAsync(CancellationToken cancellationToken)
+        [MemberNotNull(nameof(rootDir))]
+        private void EnsureRoot()
         {
-            var cancelTask = cts?.CancelAsync();
-
-            if (cancelTask != null)
+            if (string.IsNullOrWhiteSpace(rootDir))
             {
-                await cancelTask;
+                throw new InvalidOperationException("ROM root directory has not been set");
             }
-            t?.Join(TimeSpan.FromSeconds(10));
-            cts = null;
-            t = null;
         }
 
         private void CheckAbort()
@@ -72,6 +71,18 @@ namespace RomsBrowse.Web.Services
         {
             using var scope = provider.CreateScope();
             var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
+            var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
+            if (!ss.TryGetSetting(SettingsService.KnownSettings.RomDirectory, out rootDir)
+                || string.IsNullOrWhiteSpace(rootDir))
+            {
+                logger.LogInformation("ROM directory not set or empty. Skipping scan");
+                return;
+            }
+            if (!Directory.Exists(rootDir))
+            {
+                logger.LogInformation("ROM directory {RomDir} is invalid or does not exist. Skipping scan", rootDir);
+                return;
+            }
             try
             {
                 var configs = GetConfig().ToList();
@@ -127,6 +138,7 @@ namespace RomsBrowse.Web.Services
 
         private RomDirConfig[] GetConfig()
         {
+            EnsureRoot();
             return File
                 .ReadAllText(Path.Combine(rootDir, "config.json"))
                 .FromJsonRequired<RomDirConfig[]>();
@@ -185,11 +197,17 @@ namespace RomsBrowse.Web.Services
 
         private static int GetFileSize(string file) => (int)new FileInfo(file).Length;
 
-        private string GetRomPath(Platform p) => Path.Combine(rootDir, p.Folder);
+        private string GetRomPath(Platform p)
+        {
+            EnsureRoot();
+            return Path.Combine(rootDir, p.Folder);
+        }
 
         private IEnumerable<string> GetRomFiles(Platform p)
         {
+            EnsureRoot();
             return Directory.EnumerateFiles(Path.Combine(rootDir, p.Folder), "*.*", SearchOption.AllDirectories);
+
         }
 
         private int UpdatePlatform(RomsContext ctx, RomDirConfig config, Platform p)
