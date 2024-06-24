@@ -111,7 +111,9 @@ async Task InitDefaultSettings()
     //Delete token if admin user exists
     if (!await user.HasAdmin())
     {
-        ss.AddOrUpdate(SettingsService.KnownSettings.AdminToken, Guid.NewGuid());
+        ss[SettingsService.KnownSettings.AdminToken] = Guid.NewGuid()
+            .ToString()
+            .ToUpperInvariant();
     }
     else
     {

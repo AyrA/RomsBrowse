@@ -73,9 +73,9 @@ namespace RomsBrowse.Web.Controllers
                 bool createAsAdmin = false;
                 if (model.AdminToken.HasValue)
                 {
-                    if (_settingsService.TryGetSetting(SettingsService.KnownSettings.AdminToken, out Guid? token) && token.HasValue)
+                    if (_settingsService.TryGetSettingRaw(SettingsService.KnownSettings.AdminToken, out string? token) && token != null)
                     {
-                        if (token.Value == model.AdminToken.Value)
+                        if (Guid.TryParse(token, out var parsed) && parsed == model.AdminToken.Value)
                         {
                             createAsAdmin = true;
                         }

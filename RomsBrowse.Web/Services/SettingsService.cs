@@ -133,6 +133,21 @@ namespace RomsBrowse.Web.Services
         }
 
         /// <summary>
+        /// Tries to get a raw setting value
+        /// </summary>
+        /// <param name="name">Setting name</param>
+        /// <param name="value">Setting value receiver</param>
+        /// <returns>true, if setting was read, false if not found</returns>
+        public bool TryGetSettingRaw(string name, out string? value)
+        {
+            lock (cache)
+            {
+                SetCache(ctx);
+                return cache.TryGetValue(name, out value);
+            }
+        }
+
+        /// <summary>
         /// Adds a setting or updates an existing one
         /// </summary>
         /// <param name="name">Setting name</param>
