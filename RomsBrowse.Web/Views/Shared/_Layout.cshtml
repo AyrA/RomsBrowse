@@ -4,6 +4,7 @@
 @inject MainMenuService menuService
 @{
     var errorMessage = ViewData["ErrorMessage"]?.ToString();
+    var successMessage = ViewData["SuccessMessage"]?.ToString();
     var tokens = antiforgery.GetTokens(Context);
     var user = ViewData["User"] as UserViewModel ?? new UserViewModel(null);
     var hasAdmin = ViewData["HasAdmin"] as bool? ?? false;
@@ -90,6 +91,10 @@
             @if (!string.IsNullOrEmpty(errorMessage))
             {
                 <div class="alert alert-danger">@errorMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success">@successMessage</div>
             }
             @RenderBody()
         </main>

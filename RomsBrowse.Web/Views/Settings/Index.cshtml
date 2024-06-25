@@ -1,0 +1,76 @@
+﻿@model SettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<form method="post">
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <label for="@Html.IdFor(m => m.RomsDirectory)">Roms directory</label>
+            <div class="input-group mb-1">
+                <input id="@Html.IdFor(m => m.RomsDirectory)" asp-for="RomsDirectory" class="form-control" readonly placeholder="Roms directory" />
+                <input type="button" class="btn btn-primary" data-action="browse" data-target="#@Html.IdFor(m => m.RomsDirectory)" value="Browse..." />
+            </div>
+            <p>
+                If you change this value, perform a reset on the
+                <a asp-action="Actions">actions page</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <label>
+                <input asp-for="AllowAnonymousPlay" />
+                Allow anonymous play
+            </label>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <label>
+                <input asp-for="AllowRegister" />
+                Enable account registration
+            </label>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <label for="@Html.IdFor(m => m.MaxSavesPerUser)">Maximum save states per user</label>
+            <input id="@Html.IdFor(m => m.MaxSavesPerUser)" asp-for="MaxSavesPerUser" min="0" class="form-control" placeholder="Max saves per user" />
+            <i>Zero indicates no limit</i>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <label for="@Html.IdFor(m => m.AccountExpiryDays)">Account inactivity purge dealay</label>
+            <input id="@Html.IdFor(m => m.AccountExpiryDays)" asp-for="AccountExpiryDays" min="0" class="form-control" placeholder="Account inactivity purge dealay" />
+            <i>
+                Number of days of inactivity after which an account and all its saved games is deleted.
+                Activity consists of logging in, playing a game, or saving a state.
+                Zero indicates no limit
+            </i>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <label for="@Html.IdFor(m => m.SaveStateExpiryDays)">save state purge dealay</label>
+            <input id="@Html.IdFor(m => m.SaveStateExpiryDays)" asp-for="SaveStateExpiryDays" min="0" class="form-control" placeholder="Inactive save state purge delay" />
+            <i>
+                Number of days of inactivity after which a saved game is deleted.
+                Activity consists of saving a new state, or loading a state.
+                Zero indicates no limit
+            </i>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <div class="col-md-6">
+            <input type="submit" class="btn btn-primary" value="Save" />
+        </div>
+    </div>
+</form>

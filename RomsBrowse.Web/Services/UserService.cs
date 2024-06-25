@@ -80,16 +80,24 @@ namespace RomsBrowse.Web.Services
 
         public int Cleanup(TimeSpan maxAge)
         {
-            logger.LogInformation("Running User cleanup. Removing entries older than {Cutoff}", maxAge);
-            var cutoff = DateTime.UtcNow.Subtract(maxAge);
-            var total =
-                ctx.SaveStates.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(Data.Enums.UserFlags.Admin) && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete() +
-                ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(Data.Enums.UserFlags.Admin) && !m.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete();
-            if (total > 0)
+            if (maxAge > TimeSpan.Zero)
             {
-                hasAdmin = false;
+                logger.LogInformation("Running user cleanup. Removing entries older than {Cutoff}", maxAge);
+                var cutoff = DateTime.UtcNow.Subtract(maxAge);
+                var total =
+                    ctx.SaveStates.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(UserFlags.Admin) && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete() +
+                    ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(UserFlags.Admin) && !m.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete();
+                if (total > 0)
+                {
+                    hasAdmin = false;
+                }
+                return total;
             }
-            return total;
+            else
+            {
+                logger.LogInformation("Skipping user cleanup. User accounts are currently set to not expire");
+            }
+            return 0;
         }
 
         public async Task<bool> HasAdmin()

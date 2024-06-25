@@ -24,12 +24,16 @@ namespace RomsBrowse.Web.Services
                 .FirstOrDefaultAsync(m => m.UserId == user.Id && m.RomFileId == rom.Id);
             if (state == null)
             {
-                //Keep last "n" states, and delete the rest
-                await ctx.SaveStates
-                    .Where(m => m.UserId == user.Id)
-                    .OrderByDescending(m => m.Created)
-                    .Skip(ss.GetValue<int>(SettingsService.KnownSettings.MaxSaveStatesPerUser))
-                    .ExecuteDeleteAsync();
+                var maxStates = ss.GetValue<int>(SettingsService.KnownSettings.MaxSaveStatesPerUser);
+                if (maxStates > 0)
+                {
+                    //Keep last "n" states, and delete the rest
+                    await ctx.SaveStates
+                        .Where(m => m.UserId == user.Id)
+                        .OrderByDescending(m => m.Created)
+                        .Skip(maxStates)
+                        .ExecuteDeleteAsync();
+                }
                 state = new()
                 {
                     UserId = user.Id,
@@ -58,9 +62,17 @@ namespace RomsBrowse.Web.Services
 
         public int Cleanup(TimeSpan maxAge)
         {
-            logger.LogInformation("Running SaveState cleanup. Removing entries older than {Cutoff}", maxAge);
-            var cutoff = DateTime.UtcNow.Subtract(maxAge);
-            return ctx.SaveStates.Where(m => m.Created < cutoff && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireSaveState)).ExecuteDelete();
+            if (maxAge > TimeSpan.Zero)
+            {
+                logger.LogInformation("Running SaveState cleanup. Removing entries older than {Cutoff}", maxAge);
+                var cutoff = DateTime.UtcNow.Subtract(maxAge);
+                return ctx.SaveStates.Where(m => m.Created < cutoff && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireSaveState)).ExecuteDelete();
+            }
+            else
+            {
+                logger.LogInformation("Skipping SaveState cleanup. States are set to not currently expire");
+            }
+            return 0;
         }
     }
 }

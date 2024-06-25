@@ -110,8 +110,15 @@ namespace RomsBrowse.Web.Controllers
             return Redirect(ReturnUrl ?? "/");
         }
 
+        protected void SetSuccessMessage(string message)
+        {
+            ViewData.Remove("ErrorMessage");
+            ViewData["SuccessMessage"] = message;
+        }
+
         protected void SetErrorMessage(string message)
         {
+            ViewData.Remove("SuccessMessage");
             ViewData["ErrorMessage"] = message;
         }
 
