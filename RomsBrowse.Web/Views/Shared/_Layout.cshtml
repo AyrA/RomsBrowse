@@ -67,6 +67,7 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" asp-controller="Account" asp-action="Saves">Your saved games</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">Change password</a></li>
                                     @if (user.IsAdmin)
                                     {
                                         <li><a class="dropdown-item" asp-controller="Settings" asp-action="Index">Application settings</a></li>
