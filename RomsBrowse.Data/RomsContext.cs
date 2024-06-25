@@ -61,7 +61,7 @@ namespace RomsBrowse.Data
             var tableName = entityType.GetSchemaQualifiedTableName()
                 ?? throw new ArgumentException($"Type {typeof(T)} is not mapped to a table");
 
-            Database.ExecuteSqlRaw("DBCC CHECKIDENT ({0}, RESEED, 1);", tableName);
+            Database.ExecuteSqlRaw("DBCC CHECKIDENT ({0}, RESEED, 0);", tableName);
         }
     }
 }
