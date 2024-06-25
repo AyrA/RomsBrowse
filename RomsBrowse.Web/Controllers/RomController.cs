@@ -52,6 +52,7 @@ namespace RomsBrowse.Web.Controllers
             return View(rvm);
         }
 
+        [ResponseCache(NoStore = true)]
         public async Task<IActionResult> EmulatorScript(int id)
         {
             if (id <= 0)
@@ -68,7 +69,11 @@ namespace RomsBrowse.Web.Controllers
                 return NotFound();
             }
             //rom.FileName is added separately to not escape its characters.
-            //Since it's a valid file name, no escaping should be necessary
+            //Since it's a valid file name, no escaping should be necessary.
+            //Strictly speaking, the file name is not necessary since ids are used to identify items.
+            //But having the game name at the end makes the emulator shows them in settings rather than the id,
+            //which is easier for users to work with.
+            //The name is still validated in the Get function above to stop users from messing with this value.
             var url = Url.Action("Get", "Rom", new { id = rom.Id }) + "/" + rom.FileName;
             var romCode = @$"EJS_player = ""#game"";
 EJS_core = {rom.Platform.EmulatorType.ToJson()};

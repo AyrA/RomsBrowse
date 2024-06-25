@@ -12,6 +12,7 @@ namespace RomsBrowse.Web.Services
     [AutoDIRegister(AutoDIType.Singleton)]
     public class RomGatherService(IServiceProvider provider, ILogger<RomGatherService> logger)
     {
+        private readonly SemaphoreSlim locker = new(1);
         private Thread? t = null;
         private string? rootDir = null;
         private CancellationTokenSource? cts = null;
@@ -27,12 +28,60 @@ namespace RomsBrowse.Web.Services
             {
                 throw new InvalidOperationException("A gathering task is already running");
             }
-            t = new Thread(GatherRoms)
+            if (locker.Wait(1000))
             {
-                IsBackground = true,
-            };
-            cts = new();
-            t.Start();
+                try
+                {
+                    t = new Thread(GatherRoms)
+                    {
+                        IsBackground = true,
+                    };
+                    cts = new();
+                    t.Start();
+
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Unable to start GatherRoms thread");
+                    locker.Release();
+                    throw;
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Service is busy");
+            }
+        }
+
+        public async Task Reset()
+        {
+            if (IsScanning)
+            {
+                throw new InvalidOperationException("A gathering task is running and must be completed before the system can be reset");
+            }
+            if (locker.Wait(1000))
+            {
+                try
+                {
+                    using var scope = provider.CreateScope();
+                    var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
+                    await ctx.SaveStates.ExecuteDeleteAsync();
+                    await ctx.RomFiles.ExecuteDeleteAsync();
+                    await ctx.Platforms.ExecuteDeleteAsync();
+                    UpdateMenu();
+                    ctx.ResetIndex<SaveState>();
+                    ctx.ResetIndex<RomFile>();
+                    ctx.ResetIndex<Platform>();
+                }
+                finally
+                {
+                    locker.Release();
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("Service is busy");
+            }
         }
 
         [MemberNotNull(nameof(rootDir))]
@@ -69,22 +118,22 @@ namespace RomsBrowse.Web.Services
         /// </remarks>
         private void GatherRoms()
         {
-            using var scope = provider.CreateScope();
-            var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
-            var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
-            if (!ss.TryGetSetting(SettingsService.KnownSettings.RomDirectory, out rootDir)
-                || string.IsNullOrWhiteSpace(rootDir))
-            {
-                logger.LogInformation("ROM directory not set or empty. Skipping scan");
-                return;
-            }
-            if (!Directory.Exists(rootDir))
-            {
-                logger.LogInformation("ROM directory {RomDir} is invalid or does not exist. Skipping scan", rootDir);
-                return;
-            }
             try
             {
+                using var scope = provider.CreateScope();
+                var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
+                var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
+                if (!ss.TryGetSetting(SettingsService.KnownSettings.RomDirectory, out rootDir)
+                    || string.IsNullOrWhiteSpace(rootDir))
+                {
+                    logger.LogInformation("ROM directory not set or empty. Skipping scan");
+                    return;
+                }
+                if (!Directory.Exists(rootDir))
+                {
+                    logger.LogInformation("ROM directory {RomDir} is invalid or does not exist. Skipping scan", rootDir);
+                    return;
+                }
                 var configs = GetConfig().ToList();
                 var names = configs.Select(m => m.ShortName).ToList();
                 logger.LogInformation("Configured rom directories: {Dirs}", names);
@@ -131,6 +180,7 @@ namespace RomsBrowse.Web.Services
             }
             finally
             {
+                locker.Release();
                 t = null;
                 cts = null;
             }

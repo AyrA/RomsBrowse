@@ -70,6 +70,8 @@
                                     @if (user.IsAdmin)
                                     {
                                         <li><a class="dropdown-item" asp-controller="Settings" asp-action="Index">Application settings</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Settings" asp-action="Actions">Application actions</a></li>
+                                        <li><a class="dropdown-item" asp-controller="Settings" asp-action="Platforms">Platform configuration help</a></li>
                                     }
                                     <li><label class="dropdown-item" for="logoutForm">Logout</label></li>
                                 </ul>

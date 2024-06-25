@@ -52,5 +52,16 @@ namespace RomsBrowse.Data
 #endif
             });
         }
+
+        public void ResetIndex<T>()
+        {
+            var entityType = Model.FindEntityType(typeof(T))
+                ?? throw new ArgumentException($"Type {typeof(T)} has no entity");
+
+            var tableName = entityType.GetSchemaQualifiedTableName()
+                ?? throw new ArgumentException($"Type {typeof(T)} is not mapped to a table");
+
+            Database.ExecuteSqlRaw("DBCC CHECKIDENT ({0}, RESEED, 1);", tableName);
+        }
     }
 }

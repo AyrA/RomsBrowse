@@ -1,0 +1,40 @@
+﻿@model ActionViewModel
+@{
+    ViewData["Title"] = "Actions";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@if (Model.IsScanning)
+{
+    <p>
+        A scan is currently ongoing to index all ROM files.<br />
+        <a asp-action="Actions">Click here to reload</a> and see if it has completed yet.<br />
+        Once completed, this message will disappear on the next page reload.
+    </p>
+}
+
+<form method="post" class="mb-3">
+    <input type="hidden" name="Action" value="Rescan" />
+    <p>
+        Perform a ROM rescan.
+        This checks for new, updated, and deleted files in the ROM directory.<br />
+        It also checks for changes in the platform config json and will act accordingly.
+    </p>
+    <input type="submit" disabled="@Model.IsScanning" class="btn btn-warning" value="Perform rescan" />
+</form>
+
+<form method="post" class="mb-3">
+    <input type="hidden" name="Action" value="Reset" />
+    <p>
+        Perform a full ROM database reset.
+        This deletes all platforms, roms, and save states from the database.
+        ROM files will not be touched.<br />
+        <b>
+            You want to run this only if something is very screwed up.
+            In general, performing a rescan (see above)
+            is sufficient to apply all changes from the ROM directory.
+        </b>
+    </p>
+    <input type="submit" disabled="@Model.IsScanning" class="btn btn-danger" value="Perform reset" />
+</form>

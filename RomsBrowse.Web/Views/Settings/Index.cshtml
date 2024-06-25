@@ -3,6 +3,8 @@
     ViewData["Title"] = "Settings";
 }
 
+<h1>@ViewData["Title"]</h1>
+
 <form method="post">
     <div class="row mb-2">
         <div class="col-md-6">
@@ -12,8 +14,11 @@
                 <input type="button" class="btn btn-primary" data-action="browse" data-target="#@Html.IdFor(m => m.RomsDirectory)" value="Browse..." />
             </div>
             <p>
-                If you change this value, perform a reset on the
-                <a asp-action="Actions">actions page</a>
+                If you change this value or set it for the first time, perform a rescan on the
+                <a asp-action="Actions">actions page</a>.<br />
+                A valid rom directory will have a joystick icon next to it.
+                Information on how to create a valid directory structure
+                <a asp-action="Platforms">can be found here</a>.
             </p>
         </div>
     </div>

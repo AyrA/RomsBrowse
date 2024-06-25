@@ -1,0 +1,90 @@
+﻿@{
+    ViewData["Title"] = "Platform information";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    To select a ROM directory,
+    it must contain a <code>config.json</code> file containing the platform configuration.<br />
+    This page contains information about the file and the general directory layout.
+</p>
+
+<h2>Directory Layout</h2>
+<p>
+    The ROM directory layout is fairly simple.
+    The directory should contain a subfolder for each ROM platform you want to use
+    as well as the configuration json.<br />
+    No other files should exist.
+    ROM files of different platforms cannot be put into the same subfolder.<br />
+    This application will treat <b>all files</b> inside of a platform folder as a ROM,
+    regardless of the file extension.
+    Folders are scanned recursively,
+    and you may organize files within a platform in whatever manner you see fit.<br />
+    <b>
+        Do not put non-rom files in those folders,
+        or the application will pick them up.
+    </b>
+</p>
+
+<h2>Supported Platforms</h2>
+<p>
+    The Roms Browser application supports the following platforms as of now:<br />
+</p>
+<ul>
+    <li>Atari 2600 (or Atari VCS)</li>
+    <li>GameBoy</li>
+    <li>GameBoy color</li>
+    <li>GameBoy advance</li>
+    <li>Nintendo Entertainment System (NES, or Famicom)</li>
+    <li>Super Nintendo Entertainment System (SNES, or Super Famicom)</li>
+</ul>
+
+<h3>Adding More Platforms</h3>
+<p>
+    The emulator in use supports more platforms.
+    To add more platforms you must make changes to this application and recompile it.<br />
+    The changes required are as follows:
+</p>
+<ol>
+    <li>
+        Add a view for the platform in the <code>Views/Shared/EmuCore</code> folder.
+        Unless special configuration is required,
+        you can just duplicate one of the existing platform views from that folder.
+    </li>
+    <li>
+        If necessary, modify the "EmulatorScript" function in the Rom controller
+        to add extra emulator variables you need.
+    </li>
+</ol>
+
+<h2>Rom Directory Configuration</h2>
+<p>
+    The rom directory must contain a <code>config.json</code> file.
+    The file contains an array of objects. Each object has the following properties,
+    which all must be set:
+</p>
+<ul>
+    <li>
+        <b>FolderName</b>: A string that contains the name of the folder inside of the rom directory.
+        It should not contain other path segments.
+    </li>
+    <li>
+        <b>DisplayName</b>:
+        The full name of the platform as shown to the user in menus and forms
+    </li>
+    <li>
+        <b>ShortName</b>: 
+        The short name of the platform.
+        This is matched against the view names in the Views/EmuCore folder
+    </li>
+    <li>
+        <b>EmulatorType</b>: 
+        The emulator type value used by the emulator.
+        You can find a list of supported systems here:
+        <a href="https://emulatorjs.org/docs/systems" target="_blank" 
+            rel="noreferrer nofollow noopener">EmulatorJS supported systems</a>.
+        Most systems have only one value, (plus a generic one aliased to the value)
+        but occasionally may contain multiple values.
+    </li>
+</ul>

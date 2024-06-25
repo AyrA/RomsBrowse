@@ -11,7 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace RomsBrowse.Web.Controllers
 {
     [Authorize(Roles = nameof(UserFlags.Admin))]
-    public class SettingsController(UserService userService, SettingsService ss) : BaseController(userService)
+    public class SettingsController(RomGatherService rgs, UserService userService, SettingsService ss) : BaseController(userService)
     {
         [HttpGet]
         public IActionResult Index()
@@ -42,9 +42,52 @@ namespace RomsBrowse.Web.Controllers
             ss.AddOrUpdate(SettingsService.KnownSettings.MaxSaveStatesPerUser, model.MaxSavesPerUser);
             ss.AddOrUpdate(SettingsService.KnownSettings.SaveStateExpiration, TimeSpan.FromDays(model.SaveStateExpiryDays));
             ss.AddOrUpdate(SettingsService.KnownSettings.UserExpiration, TimeSpan.FromDays(model.AccountExpiryDays));
-            SetSuccessMessage("Settings updated. If you changed the Roms directory, perform a reset");
+            SetSuccessMessage("Settings updated. If you changed the Roms directory, perform a rescan");
             return View(model);
         }
+
+        [HttpGet]
+        public IActionResult Actions() => View(new ActionViewModel(rgs.IsScanning));
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ActionsAsync(ActionRequestModel model)
+        {
+            if (string.IsNullOrEmpty(model?.Action))
+            {
+                return View();
+            }
+            switch (model.Action)
+            {
+                case "Rescan":
+                    if (!rgs.IsScanning)
+                    {
+                        rgs.Scan();
+                        SetSuccessMessage("A rescan has been initiated. Depending on the number of files that need to be indexed, it may run for a while");
+                    }
+                    else
+                    {
+                        SetErrorMessage("A scan is already ongoing, please try again later");
+                    }
+                    break;
+                case "Reset":
+                    if (!rgs.IsScanning)
+                    {
+                        await rgs.Reset();
+                        SetSuccessMessage("A reset has been performed. Perform a rescan to reindex the rom files");
+                    }
+                    else
+                    {
+                        SetErrorMessage("A scan is already ongoing, please try again later");
+                    }
+                    break;
+                default:
+                    SetErrorMessage("Invalid action");
+                    break;
+            }
+            return View(new ActionViewModel(rgs.IsScanning));
+        }
+
+        public IActionResult Platforms() => View();
 
         [HttpPost, ValidateAntiForgeryToken]
         public IActionResult Folder(FolderBrowseViewModel model)
