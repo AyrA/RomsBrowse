@@ -81,7 +81,8 @@ EJS_biosUrl = {string.Empty.ToJson()};
 EJS_gameUrl = {url.ToJson()};
 EJS_pathtodata = ""/emulator/data"";
 EJS_gameName = {rom.DisplayName.ToJson()};
-EJS_onSaveState = function(e) {{console.log(e);}};
+EJS_onSaveState = function(e){{return SaveState.upload(e);}};
+EJS_onLoadState = function(e){{return SaveState.load(e);}};
 EJS_defaultOptions = {{
     'save-state-location': 'keep in browser'
 }};

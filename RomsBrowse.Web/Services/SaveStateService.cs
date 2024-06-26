@@ -15,7 +15,7 @@ namespace RomsBrowse.Web.Services
                 return;
             }
 
-            var rom = await ctx.RomFiles.AsNoTracking().FirstOrDefaultAsync(m => m.Id == gameId);
+            var rom = await ctx.RomFiles.FirstOrDefaultAsync(m => m.Id == gameId);
             if (rom == null)
             {
                 return;
