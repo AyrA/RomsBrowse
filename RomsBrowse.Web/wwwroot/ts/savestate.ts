@@ -6,7 +6,6 @@ type SaveStateParam = {
 };
 
 namespace SaveState {
-    let ramFile = null as string | null;
     let ramFileContents = new Uint8Array(0);
     let lastState: SaveStateParam | null;
     const pending = [] as SaveStateParam[];
@@ -87,20 +86,43 @@ namespace SaveState {
         return match && match.length > 1 ? match[1] : null;
     }
 
-    function getGameSaveData(): Uint8Array | null {
-        const fileName = EJS_gameName + ".srm";
-        for (let dir of EJS_emulator.gameManager.FS.readdir("/data").slice(2)) {
-            const name = `/data/${dir}/${fileName}`;
-            const info = EJS_emulator.gameManager.FS.analyzePath(name);
-            if (info.exists) {
-                ramFile = name;
-                break;
+    function isEmulatorReady(): boolean {
+        if (typeof (EJS_emulator) === "undefined") {
+            return false;
+        }
+        if (!EJS_emulator.gameManager || !EJS_emulator.gameManager.FS || !EJS_emulator.gameManager.functions) {
+            return false;
+        }
+        return true;
+    }
+
+    async function getGameSaveData(): Promise<Uint8Array | null> {
+        if (!isEmulatorReady()) {
+            return null;
+        }
+        return await EJS_emulator.gameManager.getSaveFile();
+    }
+
+    async function loadSaveFile(data: Uint8Array) {
+        if (!isEmulatorReady()) {
+            return false;
+        }
+        const evtResult = EJS_emulator.callEvent("loadSave");
+        if (!(0 < evtResult)) {
+            const savePath = EJS_emulator.gameManager.getSaveFilePath();
+            if (!savePath) {
+                return false;
             }
+            const saveParts = savePath.split("/");
+            saveParts.pop();
+            EJS_emulator.gameManager.FS.mkdirTree(saveParts.join(""));
+            if (EJS_emulator.gameManager.FS.analyzePath(savePath).exists) {
+                EJS_emulator.gameManager.FS.unlink(savePath);
+            }
+            EJS_emulator.gameManager.FS.writeFile(savePath, data);
+            EJS_emulator.gameManager.loadSaveFiles();
         }
-        if (ramFile) {
-            return EJS_emulator.gameManager.FS.readFile(ramFile);
-        }
-        return null;
+        return true;
     }
 
     async function uploadRamFile() {
@@ -108,16 +130,18 @@ namespace SaveState {
     }
 
     async function trackSaveFile() {
-        const newData = getGameSaveData();
+        const newData = await getGameSaveData();
         if (newData) {
             let hasNewData = false;
             if (newData.length !== ramFileContents.length) {
                 hasNewData = true;
+                console.log("SRAM copied");
             }
             else {
                 for (let i = 0; i < newData.length; i++) {
                     if (newData[i] !== ramFileContents[i]) {
                         hasNewData = true;
+                        console.log("SRAM changed at offset", i);
                         break;
                     }
                 }
@@ -133,6 +157,6 @@ namespace SaveState {
     //Restore existing state if any and begin save file tracking
     if (getGameId()) {
         getFromServer();
-        trackSaveFile();
+        setTimeout(trackSaveFile, 2000);
     }
 }

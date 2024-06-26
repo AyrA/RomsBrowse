@@ -123,72 +123,8 @@ var DirBrowse;
         }
     });
 })(DirBrowse || (DirBrowse = {}));
-var WasmCheck;
-(function (WasmCheck) {
-    function hasWebAssembly() {
-        return typeof (WebAssembly) === "object";
-    }
-    function reportWebAssembly() {
-        if (!hasWebAssembly()) {
-            document.body.insertAdjacentHTML("beforeend", `
-<dialog>
-    <h1>WebAssembly is not supported</h1>
-    <p>
-        Due to performance constraints in JavaScript,
-        this emulator requires WebAssembly to work,
-        which in your browser is either not present,
-        or has been disabled.<br />
-        Enable WebAssembly, or use a different browser.
-    </p>
-    <form method="dialog"><input type="submit" value="Close" /></form>
-</dialog>`);
-            const dlg = q("dialog");
-            dlg.addEventListener("close", () => void dlg.remove());
-            dlg.showModal();
-            q("emulator-container")?.remove();
-            return false;
-        }
-        else {
-            loadEmulator();
-        }
-        return true;
-    }
-    WasmCheck.reportWebAssembly = reportWebAssembly;
-    if (q("emulator-container")) {
-        reportWebAssembly();
-    }
-})(WasmCheck || (WasmCheck = {}));
-function q(x) { return document.querySelector(x); }
-function qa(x) { return document.querySelectorAll(x); }
-var Timer;
-(function (Timer) {
-    const timerElement = q("[data-auto-reload]");
-    const fallback = 10;
-    if (timerElement) {
-        let timer = parseInt(timerElement.dataset.autoReload);
-        if (Number.isNaN(timer)) {
-            console.error("Element", timerElement, "has invalid timer value:", timerElement.dataset.autoReload);
-            throw new Error("Element has invalid timer value: " + timerElement.dataset.autoReload);
-        }
-        if (timer <= 0) {
-            console.warn(`Element timer value ${timer} is out of range. Setting to ${fallback}`);
-            timer = fallback;
-        }
-        const timerId = setInterval(() => {
-            --timer;
-            if (timer >= 0) {
-                timerElement.textContent = timer.toString();
-            }
-            if (timer <= 0) {
-                clearInterval(timerId);
-                location.reload();
-            }
-        }, 1000);
-    }
-})(Timer || (Timer = {}));
 var SaveState;
 (function (SaveState) {
-    let ramFile = null;
     let ramFileContents = new Uint8Array(0);
     let lastState;
     const pending = [];
@@ -262,34 +198,57 @@ var SaveState;
         const match = location.pathname.match(/\/Play\/(\d+)/i);
         return match && match.length > 1 ? match[1] : null;
     }
-    function getGameSaveData() {
-        const fileName = EJS_gameName + ".srm";
-        for (let dir of EJS_emulator.gameManager.FS.readdir("/data").slice(2)) {
-            const name = `/data/${dir}/${fileName}`;
-            const info = EJS_emulator.gameManager.FS.analyzePath(name);
-            if (info.exists) {
-                ramFile = name;
-                break;
+    function isEmulatorReady() {
+        if (typeof (EJS_emulator) === "undefined") {
+            return false;
+        }
+        if (!EJS_emulator.gameManager || !EJS_emulator.gameManager.FS || !EJS_emulator.gameManager.functions) {
+            return false;
+        }
+        return true;
+    }
+    async function getGameSaveData() {
+        if (!isEmulatorReady()) {
+            return null;
+        }
+        return await EJS_emulator.gameManager.getSaveFile();
+    }
+    async function loadSaveFile(data) {
+        if (!isEmulatorReady()) {
+            return false;
+        }
+        const evtResult = EJS_emulator.callEvent("loadSave");
+        if (!(0 < evtResult)) {
+            const savePath = EJS_emulator.gameManager.getSaveFilePath();
+            if (!savePath) {
+                return false;
             }
+            const saveParts = savePath.split("/");
+            saveParts.pop();
+            EJS_emulator.gameManager.FS.mkdirTree(saveParts.join(""));
+            if (EJS_emulator.gameManager.FS.analyzePath(savePath).exists) {
+                EJS_emulator.gameManager.FS.unlink(savePath);
+            }
+            EJS_emulator.gameManager.FS.writeFile(savePath, data);
+            EJS_emulator.gameManager.loadSaveFiles();
         }
-        if (ramFile) {
-            return EJS_emulator.gameManager.FS.readFile(ramFile);
-        }
-        return null;
+        return true;
     }
     async function uploadRamFile() {
     }
     async function trackSaveFile() {
-        const newData = getGameSaveData();
+        const newData = await getGameSaveData();
         if (newData) {
             let hasNewData = false;
             if (newData.length !== ramFileContents.length) {
                 hasNewData = true;
+                console.log("SRAM copied");
             }
             else {
                 for (let i = 0; i < newData.length; i++) {
                     if (newData[i] !== ramFileContents[i]) {
                         hasNewData = true;
+                        console.log("SRAM changed at offset", i);
                         break;
                     }
                 }
@@ -303,6 +262,69 @@ var SaveState;
     }
     if (getGameId()) {
         getFromServer();
-        trackSaveFile();
+        setTimeout(trackSaveFile, 2000);
     }
 })(SaveState || (SaveState = {}));
+var WasmCheck;
+(function (WasmCheck) {
+    function hasWebAssembly() {
+        return typeof (WebAssembly) === "object";
+    }
+    function reportWebAssembly() {
+        if (!hasWebAssembly()) {
+            document.body.insertAdjacentHTML("beforeend", `
+<dialog>
+    <h1>WebAssembly is not supported</h1>
+    <p>
+        Due to performance constraints in JavaScript,
+        this emulator requires WebAssembly to work,
+        which in your browser is either not present,
+        or has been disabled.<br />
+        Enable WebAssembly, or use a different browser.
+    </p>
+    <form method="dialog"><input type="submit" value="Close" /></form>
+</dialog>`);
+            const dlg = q("dialog");
+            dlg.addEventListener("close", () => void dlg.remove());
+            dlg.showModal();
+            q("emulator-container")?.remove();
+            return false;
+        }
+        else {
+            loadEmulator();
+        }
+        return true;
+    }
+    WasmCheck.reportWebAssembly = reportWebAssembly;
+    if (q("emulator-container")) {
+        reportWebAssembly();
+    }
+})(WasmCheck || (WasmCheck = {}));
+function q(x) { return document.querySelector(x); }
+function qa(x) { return document.querySelectorAll(x); }
+var Timer;
+(function (Timer) {
+    const timerElement = q("[data-auto-reload]");
+    const fallback = 10;
+    if (timerElement) {
+        let timer = parseInt(timerElement.dataset.autoReload);
+        if (Number.isNaN(timer)) {
+            console.error("Element", timerElement, "has invalid timer value:", timerElement.dataset.autoReload);
+            throw new Error("Element has invalid timer value: " + timerElement.dataset.autoReload);
+        }
+        if (timer <= 0) {
+            console.warn(`Element timer value ${timer} is out of range. Setting to ${fallback}`);
+            timer = fallback;
+        }
+        const timerId = setInterval(() => {
+            --timer;
+            if (timer >= 0) {
+                timerElement.textContent = timer.toString();
+            }
+            if (timer <= 0) {
+                clearInterval(timerId);
+                location.reload();
+            }
+        }, 1000);
+    }
+})(Timer || (Timer = {}));

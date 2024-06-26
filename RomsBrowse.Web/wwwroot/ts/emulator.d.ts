@@ -6,11 +6,15 @@ declare var EJS_gameName: string;
 
 type Emulator = {
     gameManager: EmulatorGameManager;
+    callEvent: (name: string) => number;
 };
 
 type EmulatorGameManager = {
     FS: EmulatorFileSystem;
     functions: EmulatorGameFunctions;
+    getSaveFile: () => Promise<Uint8Array | null>;
+    getSaveFilePath: () => string | null;
+    loadSaveFiles: () => void;
 };
 
 type EmulatorGameFunctions = {
@@ -51,4 +55,14 @@ type EmulatorFileSystem = {
     readdir: (path: string) => string[];
     unlink: (path: string) => number;
     analyzePath: (path: string) => EmulatorPathDetails;
+    mkdir: (path: string) => void;
+    /**
+     * Creates all missing directories in the given path string
+     * @param path Path
+     * 
+     * Will do nothing if the entire path already exists.
+     * Path string must not contain file name,
+     * or it creates the file name as a directory
+     */
+    mkdirTree: (path: string) => void;
 };
