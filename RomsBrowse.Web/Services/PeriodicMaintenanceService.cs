@@ -34,7 +34,7 @@ namespace RomsBrowse.Web.Services
             var userAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.UserExpiration);
             var ssAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration);
 
-            scope.ServiceProvider.GetRequiredService<SaveStateService>().Cleanup(ssAge);
+            scope.ServiceProvider.GetRequiredService<SaveService>().Cleanup(ssAge);
             scope.ServiceProvider.GetRequiredService<UserService>().Cleanup(userAge);
         }
     }
