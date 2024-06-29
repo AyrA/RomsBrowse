@@ -6,8 +6,67 @@ type SaveStateParam = {
 };
 
 namespace SaveState {
+    enum StateMessageType {
+        success = 1,
+        warning = 2,
+        error = 3
+    };
+
+    const labels = {
+        SRAM: q("#tbSRAMStatus") as HTMLSpanElement,
+        state: q("#tbSaveStateStatus") as HTMLSpanElement,
+        upload: {
+            SRAM: q("#tbLastSRAMUpload") as HTMLSpanElement,
+            state: q("#tbLastStateUpload") as HTMLSpanElement
+        }
+    };
+    const lastUpload = {
+        SRAM: 0,
+        state: 0
+    };
     let ramFileContents = new Uint8Array(0);
     let lastState: SaveStateParam | null;
+
+    function getStateMessageClass(messageType: StateMessageType): string {
+        switch (messageType) {
+            case StateMessageType.success: return "success";
+            case StateMessageType.warning: return "warning";
+            case StateMessageType.error: return "danger";
+            default: return "info";
+        }
+    }
+
+    function setSRAMState(state: string, messageType: StateMessageType) {
+        setState(labels.SRAM, state, messageType);
+    }
+
+    function setSaveState(state: string, messageType: StateMessageType) {
+        setState(labels.state, state, messageType);
+    }
+
+    function setState(item: HTMLElement, state: string, messageType: StateMessageType) {
+        item.textContent = state;
+        item.classList.remove("alert-danger", "alert-warning", "alert-success");
+        item.classList.add(`alert-${getStateMessageClass(messageType)}`);
+    }
+
+    function refreshUploadTimer() {
+        const now = Date.now();
+        const lastSRAM = ((now - lastUpload.SRAM) / 1000) | 0;
+        const lastState = ((now - lastUpload.state) / 1000) | 0;
+        if (lastUpload.SRAM > 0) {
+            labels.upload.SRAM.textContent = `${lastSRAM} seconds ago`;
+        }
+        else {
+            labels.upload.SRAM.textContent = "never uploaded";
+        }
+        if (lastUpload.state > 0) {
+            labels.upload.state.textContent = `${lastState} seconds ago`;
+        }
+        else {
+            labels.upload.state.textContent = "never uploaded";
+        }
+    }
 
     async function saveSRAM(): Promise<boolean> {
         const id = EmulatorInterop.getGameId();
@@ -29,6 +88,7 @@ namespace SaveState {
                 }
             }
             if (changed) {
+                setSRAMState("Uploading...", StateMessageType.warning);
                 ramFileContents = sram;
                 const fd = new FormData();
                 fd.addCsrf();
@@ -36,9 +96,14 @@ namespace SaveState {
                 fd.set("SaveState", new Blob([ramFileContents]), "save.bin");
                 const result = await fetch("/Rom/SaveSRAM", { method: "POST", body: fd });
                 if (!result.ok) {
+                    setSRAMState("Failed to upload", StateMessageType.error);
                     console.warn("Failed to save SRAM to server. Status was", result.status, result.statusText);
                     console.warn(await result.text());
                     return false;
+                }
+                else {
+                    lastUpload.SRAM = Date.now();
+                    setSRAMState("Saved to server", StateMessageType.success);
                 }
             }
             return changed;
@@ -53,14 +118,17 @@ namespace SaveState {
         }
 
         if (!EmulatorInterop.isEmulatorReady()) {
+            setSRAMState("Emulator not ready", StateMessageType.warning);
             return false;
         }
         if (ramFileContents.length === 0) {
             const response = await fetch(`/Rom/GetSRAM/${id}`);
             if (response.ok) {
+                setSRAMState("Loaded from server", StateMessageType.success);
                 ramFileContents = new Uint8Array(await response.arrayBuffer());
             }
             else {
+                setSRAMState("No SRAM on server", StateMessageType.success);
                 return false;
             }
         }
@@ -73,6 +141,7 @@ namespace SaveState {
         if (!id) {
             throw new Error("Game id cannot be obtained. Not a game URL?");
         }
+        setSaveState("Uploading...", StateMessageType.warning);
         lastState = state;
         const fd = new FormData();
         fd.addCsrf();
@@ -81,9 +150,14 @@ namespace SaveState {
         fd.set("SaveState", new Blob([state.state]), "save.bin");
         const result = await fetch("/Rom/SaveState", { method: "POST", body: fd });
         if (!result.ok) {
+            setSaveState("Failed to upload", StateMessageType.error);
             console.warn("Failed to save state to server. Status was", result.status, result.statusText);
             console.warn(await result.text());
             return false;
+        }
+        else {
+            lastUpload.state = Date.now();
+            setSaveState("Saved to server", StateMessageType.success);
         }
         return true;
     }
@@ -92,6 +166,7 @@ namespace SaveState {
         if (lastState && lastState.state) {
             EJS_emulator.gameManager.FS.writeFile("/current.state", lastState.state);
             EJS_emulator.gameManager.functions.loadState("/current.state");
+            setSaveState("Reloaded", StateMessageType.success);
         }
         return lastState?.state ?? void 0;
     }
@@ -99,21 +174,30 @@ namespace SaveState {
     export async function init() {
         //Don't use savestate system if not logged in
         if (!EJS_isSignedIn) {
+            setSaveState("Browser only, not logged in", StateMessageType.warning);
+            setSRAMState("Browser only, not logged in", StateMessageType.warning);
             return;
         }
         //If no state exists, try to restore the SRAM data
         if (!EJS_loadStateURL) {
+            setSaveState("None found", StateMessageType.success);
             console.log("No saved state found. Checking for SRAM instead.");
             if (await loadSRAM()) {
+                setSRAMState("Loaded from server", StateMessageType.success);
                 console.log("SRAM restored from server");
             }
             else {
+                setSRAMState("None found", StateMessageType.success);
                 console.log("No SRAM on server. Game started without save data");
             }
+        }
+        else {
+            setSaveState("Restored from server", StateMessageType.success);
         }
         await monitorSRAM();
         window.EJS_emulator.on("loadState", loadState);
         window.EJS_emulator.on("saveState", saveState);
+        DCT.setTimer(refreshUploadTimer);
     }
 
     async function monitorSRAM() {

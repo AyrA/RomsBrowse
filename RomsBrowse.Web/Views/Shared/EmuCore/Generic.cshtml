@@ -13,6 +13,15 @@
     </div>
     <div class="col-lg-5">
         <p>
+            SRAM:
+            <span id="tbSRAMStatus">SRAM status</span>
+            (<span id="tbLastSRAMUpload">never uploaded</span>)
+            <br />
+            Save state:
+            <span id="tbSaveStateStatus">Save state status</span>
+            (<span id="tbLastStateUpload">never uploaded</span>)
+        </p>
+        <p>
             For now this works best in chromium based browsers (chromium, chrome, edge).
             Firefox has some audio playback issues but emulation works fine otherwise.<br />
             Apart from keyboard controls, most standard game controllers are supported.
@@ -21,17 +30,19 @@
         @if (user.IsLoggedIn)
         {
             <p>
-                Game memory (for games that support saving your progress)
-                is automatically uploaded to the server whenever it detects a change.
+                For games that support saving your progress,
+                game memory is automatically uploaded to the server whenever it detects a change.
                 The progress is then automatically restored when you run the game for the next time.<br />
-                Uploading your progress may happen a few seconds after saving.
-                Keep your browser open for at least 5 seconds after saving to ensure the upload was successful.
+                When you save the game, wait for the SRAM timer above to reset to zero
+                before closing your browser.
             </p>
             <p>
                 Games that do not save your progress can still be saved and restored.
                 To do so, select "Save State" from the emulator menu.
                 The state is automatically restored the next time you run the game,
-                or whenever you use the "Load State" menu option.
+                or whenever you use the "Load State" menu option.<br />
+                When you save the game, wait for the save state timer above to reset to zero
+                before closing your browser.
             </p>
         }
         else

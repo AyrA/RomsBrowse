@@ -1,10 +1,20 @@
 ﻿"use strict";
 
+/** Provides emulator interaction */
 namespace EmulatorInterop {
+    /**
+     * Gets SRAM data from the emulator
+     * @returns SRAM data, or null if game or system has no SRAM
+     */
     export function getSRAM(): Promise<Uint8Array | null> {
         return EJS_emulator.gameManager.getSaveFile();
     }
 
+    /**
+     * Sets SRAM data
+     * @param ramFileContents SRAM data previously exported using getSRAM()
+     * @returns true, if SRAM restored, false otherwise
+     */
     export function setSRAM(ramFileContents: Uint8Array): boolean {
         const evtResult = EJS_emulator.callEvent("loadSave");
         if (!(0 < evtResult)) {
