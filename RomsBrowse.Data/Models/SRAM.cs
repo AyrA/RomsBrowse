@@ -9,7 +9,7 @@ namespace RomsBrowse.Data.Models
     [Index(nameof(UserId), nameof(RomFileId), IsUnique = true)]
     [Index(nameof(Created))]
     [PrimaryKey(nameof(UserId), nameof(RomFileId))]
-    public class SaveState : IValidateable
+    public class SRAM : IValidateable
     {
         [Required]
         public User User { get; set; }
@@ -23,9 +23,6 @@ namespace RomsBrowse.Data.Models
 
         [Required]
         public DateTime Created { get; set; }
-
-        [Required, MaxLength(1024 * 1024)]
-        public byte[] Image { get; set; }
 
         [Required, MaxLength(1024 * 1024)]
         public byte[] Data { get; set; }
