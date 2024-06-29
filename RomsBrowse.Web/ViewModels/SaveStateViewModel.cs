@@ -1,12 +1,13 @@
-﻿using RomsBrowse.Data.Models;
+﻿using RomsBrowse.Common.Services;
+using RomsBrowse.Data.Models;
 
 namespace RomsBrowse.Web.ViewModels
 {
-    public class SaveStateViewModel(SaveState state)
+    public class SaveStateViewModel(SaveState state, ICompressionService compressor)
     {
         public byte[] Screenshot { get; } = state.Image;
 
-        public byte[] Data { get; } = state.Data;
+        public byte[] Data { get; } = compressor.Decompress(state.Data);
 
         public DateTime Created { get; } = state.Created;
 

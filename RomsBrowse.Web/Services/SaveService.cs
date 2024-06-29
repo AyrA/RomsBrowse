@@ -1,5 +1,6 @@
 ﻿using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
+using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
 using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.ViewModels;
@@ -7,7 +8,7 @@ using RomsBrowse.Web.ViewModels;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class SaveService(RomsContext ctx, SettingsService ss, ILogger<SaveService> logger)
+    public class SaveService(ICompressionService compressor, RomsContext ctx, SettingsService ss, ILogger<SaveService> logger)
     {
         public async Task SaveState(string username, int gameId, byte[] imageData, byte[] stateData)
         {
@@ -46,7 +47,7 @@ namespace RomsBrowse.Web.Services
                 ctx.SaveStates.Add(state);
             }
             state.Created = DateTime.UtcNow;
-            state.Data = stateData;
+            state.Data = compressor.Compress(stateData);
             state.Image = imageData;
             state.Validate();
             user.LastActivity = DateTime.UtcNow;
@@ -79,7 +80,7 @@ namespace RomsBrowse.Web.Services
             {
                 return null;
             }
-            return new(state.Image, state.Data);
+            return new(state.Image, compressor.Decompress(state.Data));
         }
 
         public async Task<bool> HasState(int id, string username)
@@ -129,7 +130,7 @@ namespace RomsBrowse.Web.Services
                 ctx.SRAMs.Add(sram);
             }
             sram.Created = DateTime.UtcNow;
-            sram.Data = sramData;
+            sram.Data = compressor.Compress(sramData);
             sram.Validate();
             user.LastActivity = DateTime.UtcNow;
             await ctx.SaveChangesAsync();
@@ -159,7 +160,7 @@ namespace RomsBrowse.Web.Services
             {
                 return null;
             }
-            return sram.Data;
+            return compressor.Decompress(sram.Data);
         }
 
         public async Task<bool> HasSRAM(int id, string username)
@@ -194,8 +195,8 @@ namespace RomsBrowse.Web.Services
                 .ToListAsync();
 
             var vm = new SaveListViewModel();
-            vm.SRAMs.AddRange(srams.Select(m => new SRAMViewModel(m)));
-            vm.SaveStates.AddRange(saves.Select(m => new SaveStateViewModel(m)));
+            vm.SRAMs.AddRange(srams.Select(m => new SRAMViewModel(m, compressor)));
+            vm.SaveStates.AddRange(saves.Select(m => new SaveStateViewModel(m, compressor)));
             return vm;
         }
 

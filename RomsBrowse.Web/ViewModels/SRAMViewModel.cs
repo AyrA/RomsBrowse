@@ -1,10 +1,11 @@
-﻿using RomsBrowse.Data.Models;
+﻿using RomsBrowse.Common.Services;
+using RomsBrowse.Data.Models;
 
 namespace RomsBrowse.Web.ViewModels
 {
-    public class SRAMViewModel(SRAM sram)
+    public class SRAMViewModel(SRAM sram, ICompressionService compressor)
     {
-        public byte[] Data { get; } = sram.Data;
+        public byte[] Data { get; } = compressor.Decompress(sram.Data);
 
         public DateTime Created { get; } = sram.Created;
 
