@@ -14,15 +14,29 @@ namespace RomsBrowse.Web.Controllers
         private readonly UserService _userService;
         private readonly SettingsService _settingsService;
         private readonly IPasswordCheckerService _passwordCheckerService;
+        private readonly SaveService _saveService;
 
-        public AccountController(IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService) : base(userService)
+        public AccountController(SaveService saveService, IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService) : base(userService)
         {
             _userService = userService;
             _settingsService = settingsService;
             _passwordCheckerService = passwordCheckerService;
+            _saveService = saveService;
         }
 
         public IActionResult Index() => RedirectToAction("Saves");
+
+        public async Task<IActionResult> Saves()
+        {
+            var vm = await _saveService.GetSaves(UserName!);
+            var maxSaves = _settingsService.GetValue<int>(SettingsService.KnownSettings.MaxSaveStatesPerUser);
+            var maxAge = _settingsService.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration).Days;
+
+            vm.MaxSaves = maxSaves;
+            vm.DeleteDaysBack = maxAge;
+
+            return View(vm);
+        }
 
         [HttpGet]
         public async Task<IActionResult> Register()

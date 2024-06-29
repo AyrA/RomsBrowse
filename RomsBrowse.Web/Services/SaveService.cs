@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
 using RomsBrowse.Web.ServiceModels;
+using RomsBrowse.Web.ViewModels;
 
 namespace RomsBrowse.Web.Services
 {
@@ -68,12 +69,12 @@ namespace RomsBrowse.Web.Services
                 return null;
             }
 
-            var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
             {
                 return null;
             }
-            var state = await ctx.SaveStates.FirstOrDefaultAsync(m => m.UserId == user.Id && m.RomFileId == gameId);
+            var state = await ctx.SaveStates.AsNoTracking().FirstOrDefaultAsync(m => m.UserId == user.Id && m.RomFileId == gameId);
             if (state == null)
             {
                 return null;
@@ -83,12 +84,12 @@ namespace RomsBrowse.Web.Services
 
         public async Task<bool> HasState(int id, string username)
         {
-            var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
             {
                 return false;
             }
-            return await ctx.SaveStates.AnyAsync(m => m.RomFileId == id && m.UserId == user.Id);
+            return await ctx.SaveStates.AsNoTracking().AnyAsync(m => m.RomFileId == id && m.UserId == user.Id);
         }
 
         public async Task SaveSRAM(string username, int gameId, byte[] sramData)
@@ -148,12 +149,12 @@ namespace RomsBrowse.Web.Services
                 return null;
             }
 
-            var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
             {
                 return null;
             }
-            var sram = await ctx.SRAMs.FirstOrDefaultAsync(m => m.UserId == user.Id && m.RomFileId == gameId);
+            var sram = await ctx.SRAMs.AsNoTracking().FirstOrDefaultAsync(m => m.UserId == user.Id && m.RomFileId == gameId);
             if (sram == null)
             {
                 return null;
@@ -163,12 +164,39 @@ namespace RomsBrowse.Web.Services
 
         public async Task<bool> HasSRAM(int id, string username)
         {
-            var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
             {
                 return false;
             }
             return await ctx.SRAMs.AnyAsync(m => m.RomFileId == id && m.UserId == user.Id);
+        }
+
+        public async Task<SaveListViewModel> GetSaves(string username)
+        {
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username)
+                ?? throw new ArgumentException("User does not exist");
+
+            var srams = await ctx.SRAMs
+                .AsNoTracking()
+                .Include(m => m.RomFile)
+                .ThenInclude(m => m.Platform)
+                .Where(m => m.UserId == user.Id)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            var saves = await ctx.SaveStates
+                .AsNoTracking()
+                .Include(m => m.RomFile)
+                .ThenInclude(m => m.Platform)
+                .Where(m => m.UserId == user.Id)
+                .AsSplitQuery()
+                .ToListAsync();
+
+            var vm = new SaveListViewModel();
+            vm.SRAMs.AddRange(srams.Select(m => new SRAMViewModel(m)));
+            vm.SaveStates.AddRange(saves.Select(m => new SaveStateViewModel(m)));
+            return vm;
         }
 
         public int Cleanup(TimeSpan maxAge)

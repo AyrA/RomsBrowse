@@ -1,0 +1,90 @@
+﻿@model SaveListViewModel
+@{
+    ViewData["Title"] = "Saved games";
+    bool canExpire = Model.DeleteDaysBack > 0;
+    bool limitedSaves = Model.MaxSaves > 0;
+}
+<h1>@ViewData["Title"]</h1>
+
+This page contains a list of all your saved games and saved states.
+
+@if (limitedSaves)
+{
+    <p>
+        You currently have @Model.SaveStates.Count/@Model.MaxSaves save states<br />
+        You currently have @Model.SRAMs.Count/@Model.MaxSaves game saves<br />
+        The oldest saves are automatically deleted when you exceed these numbers.
+        Regardless of the values, you can have one save state, and one game save per game.
+    </p>
+}
+@if (canExpire)
+{
+    <p>
+        States and saves older than @Model.DeleteDaysBack are deleted at regular intervals.
+        To keep a state or save game for longer, run the game and overwrite the save,
+        or use the appropriate button in the "actions" column
+    </p>
+}
+
+<h2>Save states</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Game</th>
+            <th>Preview</th>
+            <th>Expires</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var state in Model.SaveStates)
+        {
+            <tr>
+                <td>
+                    <a asp-action="Play" asp-controller="Rom" asp-route-id="@state.GameId" title="Click to play">
+                        @state.GameName
+                    </a><br />
+                    @state.Platform
+                </td>
+                <td>
+                    <img src="@state.GetImageBase64Url()" alt="Screenshot of the exact moment a state was saved" class="screenshot img-thumbnail" />
+                </td>
+                <td>
+                    @if(canExpire)
+                    {
+                        var exp = state.Created.AddDays(Model.DeleteDaysBack);
+                        var days = exp.Subtract(DateTime.UtcNow);
+                        @exp.ToString("R")<br />
+                        if (days.Days > 0)
+                        {
+                            <text>Expires in @days.TotalDays.ToString("0.0") days</text>
+                        }
+                        else
+                        {
+                            <span class="alert-danger">Expires in less than a day</span>
+                        }
+                    }
+                    else
+                    {
+                        <text>-</text>
+                    }
+                </td>
+                <td>
+                    <a href="@state.GetDataBase64Url()"
+                       download="@state.SaveGameName"
+                       title="Download state to use in your own emulator"
+                       class="btn btn-success">&#x1f4be;</a>
+                    @if (canExpire)
+                    {
+                        <a asp-action="ResetTimer"
+                           asp-route-type="State"
+                           asp-route-id="@state.GameId"
+                           title="Reset expiration timer"
+                           class="btn btn-info">&#x23f1;&#xfe0f;</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
