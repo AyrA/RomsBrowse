@@ -62,6 +62,7 @@ namespace RomsBrowse.Web.Controllers
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 context.Result = new RedirectResult("/");
             }
+            ViewData["CurrentUrl"] = CurrentUrl;
             ViewData["User"] = new UserViewModel(user);
             ViewData["HasAdmin"] = await userService.HasAdmin();
             await base.OnActionExecutionAsync(context, next);

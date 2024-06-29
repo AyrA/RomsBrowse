@@ -5,6 +5,7 @@ declare function setEmulatorInitValues(): void;
 declare var EJS_emulator: Emulator;
 declare var EJS_gameName: string;
 declare var EJS_loadStateURL: string | null;
+declare var EJS_isSignedIn: boolean;
 declare var EJS_onGameStart: () => void;
 
 type Emulator = {

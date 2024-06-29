@@ -79,6 +79,7 @@ namespace RomsBrowse.Web.Controllers
             var stateUrl = hasState ? $"/Rom/GetState/{rom.Id}" : null;
             var romCode = @$"""use strict;""
 function setEmulatorInitValues(){{
+    window.EJS_isSignedIn     = {IsLoggedIn.ToJson()};
     window.EJS_player         = ""#game"";
     window.EJS_core           = {rom.Platform.EmulatorType.ToJson()};
     window.EJS_biosUrl        = {string.Empty.ToJson()};

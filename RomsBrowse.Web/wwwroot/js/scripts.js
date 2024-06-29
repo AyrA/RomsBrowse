@@ -130,7 +130,7 @@ var SaveState;
     async function saveSRAM() {
         const id = EmulatorInterop.getGameId();
         if (!id) {
-            return;
+            return false;
         }
         const sram = await EmulatorInterop.getSRAM();
         if (sram && sram.length > 0) {
@@ -148,21 +148,37 @@ var SaveState;
             }
             if (changed) {
                 ramFileContents = sram;
-                console.log("Not implemented: saveSRAM");
+                const fd = new FormData();
+                fd.addCsrf();
+                fd.set("GameId", id);
+                fd.set("SaveState", new Blob([ramFileContents]), "save.bin");
+                const result = await fetch("/Rom/SaveSRAM", { method: "POST", body: fd });
+                if (!result.ok) {
+                    console.warn("Failed to save SRAM to server. Status was", result.status, result.statusText);
+                    console.warn(await result.text());
+                    return false;
+                }
             }
+            return changed;
         }
+        return false;
     }
     async function loadSRAM() {
         const id = EmulatorInterop.getGameId();
         if (!id) {
             return false;
         }
-        console.log("Not implemented: loadSRAM");
         if (!EmulatorInterop.isEmulatorReady()) {
             return false;
         }
         if (ramFileContents.length === 0) {
-            return false;
+            const response = await fetch(`/Rom/GetSRAM/${id}`);
+            if (response.ok) {
+                ramFileContents = new Uint8Array(await response.arrayBuffer());
+            }
+            else {
+                return false;
+            }
         }
         return EmulatorInterop.setSRAM(ramFileContents);
     }
@@ -181,7 +197,9 @@ var SaveState;
         if (!result.ok) {
             console.warn("Failed to save state to server. Status was", result.status, result.statusText);
             console.warn(await result.text());
+            return false;
         }
+        return true;
     }
     SaveState.saveState = saveState;
     function loadState() {
@@ -193,7 +211,21 @@ var SaveState;
     }
     SaveState.loadState = loadState;
     async function init() {
+        if (!EJS_isSignedIn) {
+            return;
+        }
+        if (!EJS_loadStateURL) {
+            console.log("No saved state found. Checking for SRAM instead.");
+            if (await loadSRAM()) {
+                console.log("SRAM restored from server");
+            }
+            else {
+                console.log("No SRAM on server. Game started without save data");
+            }
+        }
         await monitorSRAM();
+        window.EJS_emulator.on("loadState", loadState);
+        window.EJS_emulator.on("saveState", saveState);
     }
     SaveState.init = init;
     async function monitorSRAM() {
@@ -202,11 +234,7 @@ var SaveState;
     }
 })(SaveState || (SaveState = {}));
 var EJS_onGameStart = () => {
-    console.log("START");
-    window.EJS_emulator.on("loadState", console.log.bind(console, "EVT: loadState"));
-    window.EJS_emulator.on("saveState", console.log.bind(console, "EVT: saveState"));
-    window.EJS_emulator.on("loadSave", console.log.bind(console, "EVT: loadSave"));
-    window.EJS_emulator.on("saveSave", console.log.bind(console, "EVT: saveSave"));
+    console.log("Game start");
     SaveState.init();
 };
 function q(x) { return document.querySelector(x); }

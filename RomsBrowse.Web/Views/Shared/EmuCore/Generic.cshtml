@@ -1,22 +1,51 @@
 ﻿@model RomPlayViewModel
 @{
     var url = Url.Action("EmulatorScript", "Rom", new { id = Model.Id });
+    var user = ViewData["User"] as UserViewModel ?? new UserViewModel(null);
+    var returnUrl = ViewData["CurrentUrl"] as string;
 }
 <h1>@ViewData["Title"]</h1>
-<emulator-container>
-    <div id="game"></div>
-</emulator-container>
-<p>
-    For now this works best in chromium based browsers (chromium, chrome, edge).
-    Firefox has some audio playback issues but emulation works fine otherwise.<br />
-    Apart from keyboard controls, most standard game controllers are supported.
-    The emulator registers the controller automatically as soon as you press the first key on it.<br />
-    Save data (regular game memory as well as save states) is kept in your browser.
-    The emulator toolbar has icons to import and export your save.
-    You should export your save after a game session if you intend to resume it later,
-    because browsers may delete the data without warning.
-    Be sure to use the ingame save functionality first if there is one.
-</p>
+<div class="row">
+    <div class="col-lg-7">
+        <emulator-container>
+            <div id="game"></div>
+        </emulator-container>
+    </div>
+    <div class="col-lg-5">
+        <p>
+            For now this works best in chromium based browsers (chromium, chrome, edge).
+            Firefox has some audio playback issues but emulation works fine otherwise.<br />
+            Apart from keyboard controls, most standard game controllers are supported.
+            The emulator registers the controller automatically as soon as you press the first key on it.<br />
+        </p>
+        @if (user.IsLoggedIn)
+        {
+            <p>
+                Game memory (for games that support saving your progress)
+                is automatically uploaded to the server whenever it detects a change.
+                The progress is then automatically restored when you run the game for the next time.<br />
+                Uploading your progress may happen a few seconds after saving.
+                Keep your browser open for at least 5 seconds after saving to ensure the upload was successful.
+            </p>
+            <p>
+                Games that do not save your progress can still be saved and restored.
+                To do so, select "Save State" from the emulator menu.
+                The state is automatically restored the next time you run the game,
+                or whenever you use the "Load State" menu option.
+            </p>
+        }
+        else
+        {
+            <div class="alert alert-warning">
+                You are not logged in.
+                Game memory and states will only be saved in your browser.
+                Deleting your browser data or leaving this site for a long time may erase the data.
+                Consider <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@returnUrl">logging in</a>
+                before making any game progress if you intend on keeping it.
+            </div>
+        }
+    </div>
+</div>
 
 <script type="text/javascript" src="~/emulator/data/loader.js" defer></script>
 <script type="text/javascript" src="@url" defer></script>
