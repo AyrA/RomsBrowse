@@ -127,52 +127,51 @@ var SaveState;
 (function (SaveState) {
     let ramFileContents = new Uint8Array(0);
     let lastState;
-    const pending = [];
-    async function upload(state) {
-        lastState = state;
-        pending.push(state);
-        if (pending.length === 1) {
-            await processQueue();
-        }
-    }
-    SaveState.upload = upload;
-    function load() {
-        console.log("load", arguments);
-        if (lastState && lastState.state) {
-            EJS_emulator.gameManager.FS.writeFile("/current.state", lastState.state);
-            EJS_emulator.gameManager.functions.loadState("/current.state");
-        }
-        return lastState?.state ?? void 0;
-    }
-    SaveState.load = load;
-    async function getFromServer() {
-        const id = getGameId();
+    async function saveSRAM() {
+        const id = EmulatorInterop.getGameId();
         if (!id) {
-            throw new Error("Game id cannot be obtained. Not a game URL?");
-        }
-        const fd = new FormData();
-        fd.addCsrf();
-        fd.set("GameId", id);
-        const result = await fetch("/Rom/GetState", { method: "POST", body: fd });
-        if (result.ok) {
-            lastState = {
-                state: new Uint8Array(await result.arrayBuffer()),
-                screenshot: new Uint8Array(0)
-            };
-        }
-        else if (result.status === 404) {
-            console.log("Game has no saved state. starting from blank");
-        }
-    }
-    async function processQueue() {
-        const id = getGameId();
-        if (!id) {
-            throw new Error("Game id cannot be obtained. Not a game URL?");
-        }
-        const state = pending[0];
-        if (!state) {
             return;
         }
+        const sram = await EmulatorInterop.getSRAM();
+        if (sram && sram.length > 0) {
+            let changed = false;
+            if (sram.length != ramFileContents.length) {
+                changed = true;
+            }
+            else {
+                for (let i = 0; i < sram.length; i++) {
+                    if (sram[i] !== ramFileContents[i]) {
+                        changed = true;
+                        break;
+                    }
+                }
+            }
+            if (changed) {
+                ramFileContents = sram;
+                console.log("Not implemented: saveSRAM");
+            }
+        }
+    }
+    async function loadSRAM() {
+        const id = EmulatorInterop.getGameId();
+        if (!id) {
+            return false;
+        }
+        console.log("Not implemented: loadSRAM");
+        if (!EmulatorInterop.isEmulatorReady()) {
+            return false;
+        }
+        if (ramFileContents.length === 0) {
+            return false;
+        }
+        return EmulatorInterop.setSRAM(ramFileContents);
+    }
+    async function saveState(state) {
+        const id = EmulatorInterop.getGameId();
+        if (!id) {
+            throw new Error("Game id cannot be obtained. Not a game URL?");
+        }
+        lastState = state;
         const fd = new FormData();
         fd.addCsrf();
         fd.set("GameId", id);
@@ -183,123 +182,33 @@ var SaveState;
             console.warn("Failed to save state to server. Status was", result.status, result.statusText);
             console.warn(await result.text());
         }
-        else {
-            console.log("Ok");
-        }
-        pending.shift();
-        while (pending.length > 1) {
-            pending.shift();
-        }
-        if (pending.length > 0) {
-            await processQueue();
-        }
     }
-    function getGameId() {
-        const match = location.pathname.match(/\/Play\/(\d+)/i);
-        return match && match.length > 1 ? match[1] : null;
-    }
-    function isEmulatorReady() {
-        if (typeof (EJS_emulator) === "undefined") {
-            return false;
+    SaveState.saveState = saveState;
+    function loadState() {
+        if (lastState && lastState.state) {
+            EJS_emulator.gameManager.FS.writeFile("/current.state", lastState.state);
+            EJS_emulator.gameManager.functions.loadState("/current.state");
         }
-        if (!EJS_emulator.gameManager || !EJS_emulator.gameManager.FS || !EJS_emulator.gameManager.functions) {
-            return false;
-        }
-        return true;
+        return lastState?.state ?? void 0;
     }
-    async function getGameSaveData() {
-        if (!isEmulatorReady()) {
-            return null;
-        }
-        return await EJS_emulator.gameManager.getSaveFile();
+    SaveState.loadState = loadState;
+    async function init() {
+        await monitorSRAM();
     }
-    async function loadSaveFile(data) {
-        if (!isEmulatorReady()) {
-            return false;
-        }
-        const evtResult = EJS_emulator.callEvent("loadSave");
-        if (!(0 < evtResult)) {
-            const savePath = EJS_emulator.gameManager.getSaveFilePath();
-            if (!savePath) {
-                return false;
-            }
-            const saveParts = savePath.split("/");
-            saveParts.pop();
-            EJS_emulator.gameManager.FS.mkdirTree(saveParts.join(""));
-            if (EJS_emulator.gameManager.FS.analyzePath(savePath).exists) {
-                EJS_emulator.gameManager.FS.unlink(savePath);
-            }
-            EJS_emulator.gameManager.FS.writeFile(savePath, data);
-            EJS_emulator.gameManager.loadSaveFiles();
-        }
-        return true;
-    }
-    async function uploadRamFile() {
-    }
-    async function trackSaveFile() {
-        const newData = await getGameSaveData();
-        if (newData) {
-            let hasNewData = false;
-            if (newData.length !== ramFileContents.length) {
-                hasNewData = true;
-                console.log("SRAM copied");
-            }
-            else {
-                for (let i = 0; i < newData.length; i++) {
-                    if (newData[i] !== ramFileContents[i]) {
-                        hasNewData = true;
-                        console.log("SRAM changed at offset", i);
-                        break;
-                    }
-                }
-            }
-            if (hasNewData) {
-                ramFileContents = newData;
-                await uploadRamFile();
-            }
-        }
-        setTimeout(trackSaveFile, 2000);
-    }
-    if (getGameId()) {
-        getFromServer();
-        setTimeout(trackSaveFile, 2000);
+    SaveState.init = init;
+    async function monitorSRAM() {
+        await saveSRAM();
+        setTimeout(monitorSRAM, 2000);
     }
 })(SaveState || (SaveState = {}));
-var WasmCheck;
-(function (WasmCheck) {
-    function hasWebAssembly() {
-        return typeof (WebAssembly) === "object";
-    }
-    function reportWebAssembly() {
-        if (!hasWebAssembly()) {
-            document.body.insertAdjacentHTML("beforeend", `
-<dialog>
-    <h1>WebAssembly is not supported</h1>
-    <p>
-        Due to performance constraints in JavaScript,
-        this emulator requires WebAssembly to work,
-        which in your browser is either not present,
-        or has been disabled.<br />
-        Enable WebAssembly, or use a different browser.
-    </p>
-    <form method="dialog"><input type="submit" value="Close" /></form>
-</dialog>`);
-            const dlg = q("dialog");
-            dlg.addEventListener("close", () => void dlg.remove());
-            dlg.showModal();
-            q("emulator-container")?.remove();
-            return false;
-        }
-        else {
-            loadEmulator();
-        }
-        return true;
-    }
-    WasmCheck.reportWebAssembly = reportWebAssembly;
-    if (q("emulator-container")) {
-        reportWebAssembly();
-    }
-})(WasmCheck || (WasmCheck = {}));
+var EJS_onGameStart = () => {
+    console.log("START");
+    window.EJS_emulator.on("loadState", console.log.bind(console, "EVT: loadState"));
+    window.EJS_emulator.on("saveState", console.log.bind(console, "EVT: saveState"));
+    window.EJS_emulator.on("loadSave", console.log.bind(console, "EVT: loadSave"));
+    window.EJS_emulator.on("saveSave", console.log.bind(console, "EVT: saveSave"));
+    SaveState.init();
+};
 function q(x) { return document.querySelector(x); }
 function qa(x) { return document.querySelectorAll(x); }
 var Timer;
@@ -328,3 +237,100 @@ var Timer;
         }, 1000);
     }
 })(Timer || (Timer = {}));
+var EmulatorInterop;
+(function (EmulatorInterop) {
+    function getSRAM() {
+        return EJS_emulator.gameManager.getSaveFile();
+    }
+    EmulatorInterop.getSRAM = getSRAM;
+    function setSRAM(ramFileContents) {
+        const evtResult = EJS_emulator.callEvent("loadSave");
+        if (!(0 < evtResult)) {
+            const savePath = EJS_emulator.gameManager.getSaveFilePath();
+            if (!savePath) {
+                return false;
+            }
+            const saveParts = savePath.split("/");
+            saveParts.pop();
+            EJS_emulator.gameManager.FS.mkdirTree(saveParts.join(""));
+            if (EJS_emulator.gameManager.FS.analyzePath(savePath).exists) {
+                EJS_emulator.gameManager.FS.unlink(savePath);
+            }
+            EJS_emulator.gameManager.FS.writeFile(savePath, ramFileContents);
+            EJS_emulator.gameManager.loadSaveFiles();
+            return true;
+        }
+        return false;
+    }
+    EmulatorInterop.setSRAM = setSRAM;
+    function reset() {
+        EJS_emulator.gameManager.reset();
+    }
+    EmulatorInterop.reset = reset;
+    function getGameId() {
+        const match = location.pathname.match(/\/Play\/(\d+)/i);
+        return match && match.length > 1 ? match[1] : null;
+    }
+    EmulatorInterop.getGameId = getGameId;
+    function isEmulatorReady() {
+        if (typeof (EJS_emulator) === "undefined") {
+            return false;
+        }
+        if (!EJS_emulator.gameManager || !EJS_emulator.gameManager.FS || !EJS_emulator.gameManager.functions) {
+            return false;
+        }
+        return true;
+    }
+    EmulatorInterop.isEmulatorReady = isEmulatorReady;
+    function waitForEmulatorReady() {
+        if (isEmulatorReady()) {
+            return Promise.resolve();
+        }
+        return new Promise((accept, reject) => {
+            const check = function () {
+                if (isEmulatorReady()) {
+                    accept();
+                }
+                else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
+    }
+    EmulatorInterop.waitForEmulatorReady = waitForEmulatorReady;
+    async function startEmulator() {
+        await loadEmulator();
+    }
+    EmulatorInterop.startEmulator = startEmulator;
+})(EmulatorInterop || (EmulatorInterop = {}));
+var WasmCheck;
+(function (WasmCheck) {
+    function hasWebAssembly() {
+        return typeof (WebAssembly) === "object";
+    }
+    WasmCheck.hasWebAssembly = hasWebAssembly;
+    function reportWebAssembly() {
+        if (!hasWebAssembly()) {
+            document.body.insertAdjacentHTML("beforeend", `
+<dialog>
+    <h1>WebAssembly is not supported</h1>
+    <p>
+        Due to performance constraints in JavaScript,
+        this emulator requires WebAssembly to work,
+        which in your browser is either not present,
+        or has been disabled.<br />
+        Enable WebAssembly, or use a different browser.
+    </p>
+    <form method="dialog"><input type="submit" value="Close" /></form>
+</dialog>`);
+            const dlg = q("dialog");
+            dlg.addEventListener("close", () => void dlg.remove());
+            dlg.showModal();
+            q("emulator-container")?.remove();
+            return false;
+        }
+        return true;
+    }
+    WasmCheck.reportWebAssembly = reportWebAssembly;
+})(WasmCheck || (WasmCheck = {}));

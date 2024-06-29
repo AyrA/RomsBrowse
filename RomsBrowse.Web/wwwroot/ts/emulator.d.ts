@@ -1,17 +1,22 @@
 /** Loads EmulatorJS emulator engine */
-declare function loadEmulator(): void;
+declare function loadEmulator(): Promise<void>;
+declare function setEmulatorInitValues(): void;
 
 declare var EJS_emulator: Emulator;
 declare var EJS_gameName: string;
+declare var EJS_loadStateURL: string | null;
+declare var EJS_onGameStart: () => void;
 
 type Emulator = {
     gameManager: EmulatorGameManager;
     callEvent: (name: string) => number;
+    on: (event: string, handler: Function) => void;
 };
 
 type EmulatorGameManager = {
     FS: EmulatorFileSystem;
     functions: EmulatorGameFunctions;
+    reset: () => void;
     getSaveFile: () => Promise<Uint8Array | null>;
     getSaveFilePath: () => string | null;
     loadSaveFiles: () => void;
