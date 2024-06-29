@@ -66,10 +66,10 @@ namespace RomsBrowse.Web.Services
                     using var scope = provider.CreateScope();
                     var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
                     await ctx.SaveStates.ExecuteDeleteAsync();
+                    await ctx.SRAMs.ExecuteDeleteAsync();
                     await ctx.RomFiles.ExecuteDeleteAsync();
                     await ctx.Platforms.ExecuteDeleteAsync();
                     UpdateMenu();
-                    ctx.ResetIndex<SaveState>();
                     ctx.ResetIndex<RomFile>();
                     ctx.ResetIndex<Platform>();
                 }

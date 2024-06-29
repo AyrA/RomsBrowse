@@ -55,7 +55,7 @@ namespace RomsBrowse.Data
             });
         }
 
-        public void ResetIndex<T>()
+        public bool ResetIndex<T>()
         {
             var entityType = Model.FindEntityType(typeof(T))
                 ?? throw new ArgumentException($"Type {typeof(T)} has no entity");
@@ -63,7 +63,15 @@ namespace RomsBrowse.Data
             var tableName = entityType.GetSchemaQualifiedTableName()
                 ?? throw new ArgumentException($"Type {typeof(T)} is not mapped to a table");
 
-            Database.ExecuteSqlRaw("DBCC CHECKIDENT ({0}, RESEED, 0);", tableName);
+            try
+            {
+                Database.ExecuteSqlRaw("DBCC CHECKIDENT ({0}, RESEED, 0);", tableName);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
     }
 }
