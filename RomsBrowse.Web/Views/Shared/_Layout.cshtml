@@ -59,7 +59,15 @@
                                 }
                             </ul>
                         </li>
-                        @if(user.IsLoggedIn)
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Help
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="Help" asp-action="Saves">Save games, SRAM, and states</a></li>
+                            </ul>
+                        </li>
+                        @if (user.IsLoggedIn)
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

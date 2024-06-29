@@ -1,0 +1,81 @@
+﻿@{
+    ViewData["Title"] = "About saving games";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    Saving a game is possible in two ways,
+    and they tend to confuse new players.
+    This article tries to clear this up
+</p>
+
+<h2>SRAM and savegames</h2>
+
+<p>
+    <i>This is the official way of saving your progress offered by the game/platform</i>
+</p>
+
+<p>
+    Some platforms and games support saving your progress.
+    Often, this is stored inside of the game cartridge.
+    More modern systems use flash memory,
+    but older systems used static random access memory (SRAM),
+    a type of memory that can be rewritten fairly quickly as often as desired.
+    For the data to remain, a battery is used to continuously supply
+    the small current required to keep the data intact.
+    If you have a game that no longer saves, you likely have a dead battery.<br />
+    Just because a platform supports this functionality doesn't means the game does too.
+    A famous example is Tetris&reg; for the Nintendo&reg; GameBoy&reg;.
+    The platform supports saving your game, but this specific game doesn't.
+</p>
+
+<h3>How it is saved</h3>
+<p>
+    The emulator watches over the SRAM region,
+    and if it detects a change, it takes a copy of the memory,
+    and uploads it to the server if you're logged in.<br />
+    When you play the game at a later point,
+    the data is loaded again from the server and restored.<br />
+    <b>You need to be logged in for this to work</b>
+</p>
+
+<h2>Save states</h2>
+<p>
+    <i>This is an unintended way of saving, offered by practically all emulators</i>
+</p>
+
+<p>
+    Old platforms are fairly simple to emulate, and don't require a lot of memory.
+    Save states use this to their advantage.<br />
+    When you create a save state,
+    the emulator is briefly frozen in time,
+    and the entire state of the emulated hardware (processor, memory, audio, etc.)
+    is saved to a file.<br />
+    This file can later be used to restore the emulator to the exact state when the snapshot was made.
+</p>
+
+<p>
+    Saving a game this way brings huge benefits, among them:<br />
+    It's a lot faster than SRAM based saving.<br />
+    You can save your progress in games that don't support saving.<br />
+    You can save before a difficult part and then repeatedly retry said part.<br />
+    You can redo luck based sections until the random number generator acts in your favor.<br />
+</p>
+
+<h3>How it is saved</h3>
+<p>
+    When you click the floppy icon in the emulator menu,
+    a state snapshot is taken and sent to the server.<br />
+    When you come back later,
+    the state is automatically loaded when you start up the same game again.<br />
+    <b>You need to be logged in for this to work</b>
+</p>
+
+<h2>SRAM vs Saved state</h2>
+<p>
+    If you happen to have both, an SRAM file and a saved state,
+    the emulator will prefer the saved state over the SRAM.<br />
+    You can delete an unwanted state from your
+    <a asp-action="Saves" asp-controller="Account">save game page</a>.
+</p>
