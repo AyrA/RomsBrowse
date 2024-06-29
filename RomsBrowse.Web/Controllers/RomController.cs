@@ -123,7 +123,7 @@ if (WasmCheck.reportWebAssembly()) {{
 
             try
             {
-                await saveStateService.SaveState(UserName!, model.GameId, img, data);
+                await saveStateService.SaveState(model.GameId, UserName!, img, data);
             }
             catch (Exception ex)
             {
@@ -175,7 +175,7 @@ if (WasmCheck.reportWebAssembly()) {{
 
             try
             {
-                await saveStateService.SaveSRAM(UserName!, model.GameId, data);
+                await saveStateService.SaveSRAM(model.GameId, UserName!, data);
             }
             catch (Exception ex)
             {

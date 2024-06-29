@@ -54,7 +54,7 @@ namespace RomsBrowse.Web.Services
             await ctx.SaveChangesAsync();
         }
 
-        public Task SaveState(string username, int gameId, Stream imageData, Stream stateData)
+        public Task SaveState(int gameId, string username, Stream imageData, Stream stateData)
         {
             using var ms1 = new MemoryStream();
             using var ms2 = new MemoryStream();
@@ -83,17 +83,17 @@ namespace RomsBrowse.Web.Services
             return new(state.Image, compressor.Decompress(state.Data));
         }
 
-        public async Task<bool> HasState(int id, string username)
+        public async Task<bool> HasState(int gameId, string username)
         {
             var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
             {
                 return false;
             }
-            return await ctx.SaveStates.AsNoTracking().AnyAsync(m => m.RomFileId == id && m.UserId == user.Id);
+            return await ctx.SaveStates.AsNoTracking().AnyAsync(m => m.RomFileId == gameId && m.UserId == user.Id);
         }
 
-        public async Task SaveSRAM(string username, int gameId, byte[] sramData)
+        public async Task SaveSRAM(int gameId, string username, byte[] sramData)
         {
             var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
@@ -136,11 +136,11 @@ namespace RomsBrowse.Web.Services
             await ctx.SaveChangesAsync();
         }
 
-        public Task SaveSRAM(string username, int gameId, Stream stateData)
+        public Task SaveSRAM(int gameId, string username, Stream stateData)
         {
             using var ms1 = new MemoryStream();
             stateData.CopyTo(ms1);
-            return SaveSRAM(username, gameId, ms1.ToArray());
+            return SaveSRAM(gameId, username, ms1.ToArray());
         }
 
         public async Task<byte[]?> GetSRAM(int gameId, string username)
@@ -163,14 +163,14 @@ namespace RomsBrowse.Web.Services
             return compressor.Decompress(sram.Data);
         }
 
-        public async Task<bool> HasSRAM(int id, string username)
+        public async Task<bool> HasSRAM(int gameId, string username)
         {
             var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
             {
                 return false;
             }
-            return await ctx.SRAMs.AnyAsync(m => m.RomFileId == id && m.UserId == user.Id);
+            return await ctx.SRAMs.AnyAsync(m => m.RomFileId == gameId && m.UserId == user.Id);
         }
 
         public async Task<SaveListViewModel> GetSaves(string username)
@@ -215,6 +215,33 @@ namespace RomsBrowse.Web.Services
                 logger.LogInformation("Skipping state and SRAM cleanup. States are set to not currently expire");
             }
             return 0;
+        }
+
+        public async Task ResetTimer(int gameId, string username, SaveType state)
+        {
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username)
+                ?? throw new Exception("User does not exist");
+            int changed = 0;
+            if (state == SaveType.State)
+            {
+                changed = await ctx.SaveStates
+                    .Where(m => m.UserId == user.Id && m.RomFileId == gameId)
+                    .ExecuteUpdateAsync(m => m.SetProperty(p => p.Created, DateTime.UtcNow));
+            }
+            else if (state == SaveType.SRAM)
+            {
+                changed = await ctx.SRAMs
+                    .Where(m => m.UserId == user.Id && m.RomFileId == gameId)
+                    .ExecuteUpdateAsync(m => m.SetProperty(p => p.Created, DateTime.UtcNow));
+            }
+            else
+            {
+                throw new Exception("Invalid save type");
+            }
+            if (changed == 0)
+            {
+                throw new Exception($"No {state} data found for this game");
+            }
         }
     }
 }

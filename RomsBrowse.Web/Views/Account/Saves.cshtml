@@ -88,3 +88,64 @@ This page contains a list of all your saved games and saved states.
         }
     </tbody>
 </table>
+
+<h2>SRAM Data</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Game</th>
+            <th>Expires</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var state in Model.SRAMs)
+        {
+            <tr>
+                <td>
+                    <a asp-action="Play" asp-controller="Rom" asp-route-id="@state.GameId" title="Click to play">
+                        @state.GameName
+                    </a><br />
+                    @state.Platform
+                </td>
+                <td>
+                    @if (canExpire)
+                    {
+                        var exp = state.Created.AddDays(Model.DeleteDaysBack);
+                        var days = exp.Subtract(DateTime.UtcNow);
+                        @exp.ToString("R")
+
+                        <br />
+                        if (days.Days > 0)
+                        {
+                            <text>Expires in @days.TotalDays.ToString("0.0") days</text>
+                        }
+                        else
+                        {
+                            <span class="alert-danger">Expires in less than a day</span>
+                        }
+                    }
+                    else
+                    {
+                        <text>-</text>
+                    }
+                </td>
+                <td>
+                    <a href="@state.GetDataBase64Url()"
+                       download="@state.SaveGameName"
+                       title="Download state to use in your own emulator"
+                       class="btn btn-success">&#x1f4be;</a>
+                    @if (canExpire)
+                    {
+                        <a asp-action="ResetTimer"
+                           asp-route-type="SRAM"
+                           asp-route-id="@state.GameId"
+                           title="Reset expiration timer"
+                           class="btn btn-info">&#x23f1;&#xfe0f;</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

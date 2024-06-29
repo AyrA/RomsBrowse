@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Common.Services;
 using RomsBrowse.Data.Enums;
+using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 
@@ -35,7 +36,25 @@ namespace RomsBrowse.Web.Controllers
             vm.MaxSaves = maxSaves;
             vm.DeleteDaysBack = maxAge;
 
-            return View(vm);
+            return View(nameof(Saves), vm);
+        }
+
+        public async Task<IActionResult> ResetTimer(int id, [FromQuery] string type)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(type) || !Enum.TryParse(type, true, out SaveType t))
+                {
+                    throw new ArgumentException("Invalid save type");
+                }
+                await _saveService.ResetTimer(id, UserName!, t);
+                SetSuccessMessage($"{t} expiration timer was reset");
+            }
+            catch (Exception ex)
+            {
+                SetErrorMessage(ex);
+            }
+            return await Saves();
         }
 
         [HttpGet]
