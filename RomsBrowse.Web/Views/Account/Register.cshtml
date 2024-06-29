@@ -28,12 +28,12 @@ else
                 <form method="post">
                     @if (!Model.HasAdmin)
                     {
-                        <input asp-for="AdminToken" autocomplete="off" class="form-control mb-3" placeholder="Admin token" required />
+                        <input asp-for="AdminToken" id="f10" autocomplete="off" class="form-control mb-3" placeholder="Admin token" required />
                     }
                     <div class="input-group">
-                        <input autocomplete="off" type="text" class="form-control" asp-for="Username" placeholder="Username" required />
-                        <input autocomplete="off" type="password" class="form-control" asp-for="Password1" placeholder="Password" required />
-                        <input autocomplete="off" type="password" class="form-control" asp-for="Password2" placeholder="Password" required />
+                        <input autocomplete="off" id="f11" type="text" class="form-control" asp-for="Username" placeholder="Username" required />
+                        <input autocomplete="off" id="f12" type="password" class="form-control" asp-for="Password1" placeholder="Password" required />
+                        <input autocomplete="off" id="f13" type="password" class="form-control" asp-for="Password2" placeholder="Password" required />
                         <input type="submit" class="btn btn-primary" value="Register" />
                     </div>
                 </form>
@@ -43,15 +43,17 @@ else
             <form method="post">
                 @if (!Model.HasAdmin)
                 {
-                    <input autocomplete="off" asp-for="AdminToken" class="form-control mb-1" placeholder="Admin token" required />
+                    <input autocomplete="off" id="f20" asp-for="AdminToken" class="form-control mb-1" placeholder="Admin token" required />
                 }
-                <input autocomplete="off" type="text" asp-for="Username" class="form-control mb-1" placeholder="Username" required />
-                <input autocomplete="off" type="password" asp-for="Password1" class="form-control mb-1" placeholder="Password" required />
-                <input autocomplete="off" type="password" asp-for="Password2" class="form-control mb-1" placeholder="Password" required />
+                <input autocomplete="off" id="f21" type="text" asp-for="Username" class="form-control mb-1" placeholder="Username" required />
+                <input autocomplete="off" id="f22" type="password" asp-for="Password1" class="form-control mb-1" placeholder="Password" required />
+                <input autocomplete="off" id="f23" type="password" asp-for="Password2" class="form-control mb-1" placeholder="Password" required />
                 <input type="submit" class="btn btn-primary" value="Register" />
             </form>
         </div>
     </div>
+
+    <partial name="PartialPasswordSafety" />
 
     <p>
         Have an account already?

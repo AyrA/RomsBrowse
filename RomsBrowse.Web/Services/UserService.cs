@@ -204,5 +204,20 @@ namespace RomsBrowse.Web.Services
             await ctx.SaveChangesAsync();
             return true;
         }
+
+        public async Task ChangePassword(string username, string oldPassword, string newPassword)
+        {
+            var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username)
+                ?? throw new Exception("User does not exist");
+
+            passwordChecker.EnsureSafePassword(newPassword);
+
+            if (!passwordService.CheckPassword(oldPassword, user.Hash, out _))
+            {
+                throw new Exception("Old password is incorrect");
+            }
+            user.Hash = passwordService.HashPassword(newPassword);
+            await ctx.SaveChangesAsync();
+        }
     }
 }

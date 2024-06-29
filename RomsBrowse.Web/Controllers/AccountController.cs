@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using RomsBrowse.Common.Services;
 using RomsBrowse.Data.Enums;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
@@ -12,12 +13,16 @@ namespace RomsBrowse.Web.Controllers
 
         private readonly UserService _userService;
         private readonly SettingsService _settingsService;
+        private readonly IPasswordCheckerService _passwordCheckerService;
 
-        public AccountController(UserService userService, SettingsService settingsService) : base(userService)
+        public AccountController(IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService) : base(userService)
         {
             _userService = userService;
             _settingsService = settingsService;
+            _passwordCheckerService = passwordCheckerService;
         }
+
+        public IActionResult Index() => RedirectToAction("Saves");
 
         [HttpGet]
         public async Task<IActionResult> Register()
@@ -121,6 +126,42 @@ namespace RomsBrowse.Web.Controllers
             finally
             {
                 _registerLock.Release();
+            }
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            if (!IsLoggedIn)
+            {
+                return RedirectToLogin();
+            }
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!IsLoggedIn)
+            {
+                return RedirectToLogin();
+            }
+            try
+            {
+                model.Validate();
+                var rating = _passwordCheckerService.RatePassword(model.NewPassword1, false);
+                if (!rating.IsSafe)
+                {
+                    throw new Exception($"The password is not safe. Make sure it's at least {rating.MinLength} characters long and contains at least {rating.MinScore} items of the following list: lowercase, uppercase, digits, symbols");
+                }
+                await _userService.ChangePassword(UserName!, model.OldPassword, model.NewPassword1);
+                SetSuccessMessage("Password changed");
+            }
+            catch (Exception ex)
+            {
+                SetErrorMessage(ex);
+                return View(model);
             }
             return View(model);
         }
