@@ -88,12 +88,19 @@ namespace SaveState {
                 }
             }
             if (changed) {
-                setSRAMState("Uploading...", StateMessageType.warning);
                 ramFileContents = sram;
+                const screenshot = await EmulatorInterop.getScreenshot();
+                if (!screenshot || screenshot.length < 50) {
+                    //If the screenshot is very small, the screen has not loaded yet
+                    console.log("Emulator has no valid screenshot");
+                    return false;
+                }
+                setSRAMState("Uploading...", StateMessageType.warning);
                 const fd = new FormData();
                 fd.addCsrf();
                 fd.set("GameId", id);
                 fd.set("SaveState", new Blob([ramFileContents]), "save.bin");
+                fd.set("Screenshot", new Blob([screenshot]), "image.png");
                 const result = await fetch("/Rom/SaveSRAM", { method: "POST", body: fd });
                 if (!result.ok) {
                     setSRAMState("Failed to upload", StateMessageType.error);

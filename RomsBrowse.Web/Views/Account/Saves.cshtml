@@ -26,126 +26,135 @@ This page contains a list of all your saved games and saved states.
     </p>
 }
 
-<h2>Save states</h2>
-
 <table class="table">
-    <thead>
+    <tr>
+        <td colspan="4"><h2>Save states</h2></td>
+    </tr>
+    <tr>
+        <th>Game</th>
+        <th>Preview</th>
+        <th>Expires</th>
+        <th>Actions</th>
+    </tr>
+    @if (Model.SaveStates.Count == 0)
+    {
         <tr>
-            <th>Game</th>
-            <th>Preview</th>
-            <th>Expires</th>
-            <th>Actions</th>
+            <td colspan="4"><i>No save state files exist yet</i></td>
         </tr>
-    </thead>
-    <tbody>
-        @foreach (var state in Model.SaveStates)
-        {
-            <tr>
-                <td>
-                    <a asp-action="Play" asp-controller="Rom" asp-route-id="@state.GameId" title="Click to play">
-                        @state.GameName
-                    </a><br />
-                    @state.Platform
-                </td>
-                <td>
-                    <img src="@state.GetImageBase64Url()" alt="Screenshot of the exact moment a state was saved" class="screenshot img-thumbnail" />
-                </td>
-                <td>
-                    @if(canExpire)
+    }
+    @foreach (var state in Model.SaveStates)
+    {
+        <tr>
+            <td>
+                <a asp-action="Play" asp-controller="Rom" asp-route-id="@state.GameId" title="Click to play">
+                    @state.GameName
+                </a><br />
+                @state.Platform
+            </td>
+            <td>
+                <img src="@state.GetImageBase64Url()" alt="Screenshot of the exact moment a state was saved" class="screenshot img-thumbnail" />
+            </td>
+            <td>
+                @if (canExpire)
+                {
+                    var exp = state.Created.AddDays(Model.DeleteDaysBack);
+                    var days = exp.Subtract(DateTime.UtcNow);
+                    @exp.ToString("R")
+
+                    <br />
+                    if (days.Days > 0)
                     {
-                        var exp = state.Created.AddDays(Model.DeleteDaysBack);
-                        var days = exp.Subtract(DateTime.UtcNow);
-                        @exp.ToString("R")<br />
-                        if (days.Days > 0)
-                        {
-                            <text>Expires in @days.TotalDays.ToString("0.0") days</text>
-                        }
-                        else
-                        {
-                            <span class="alert-danger">Expires in less than a day</span>
-                        }
+                        <text>Expires in @days.TotalDays.ToString("0.0") days</text>
                     }
                     else
                     {
-                        <text>-</text>
+                        <span class="alert-danger">Expires in less than a day</span>
                     }
-                </td>
-                <td>
-                    <a href="@state.GetDataBase64Url()"
-                       download="@state.SaveGameName"
-                       title="Download state to use in your own emulator"
-                       class="btn btn-success">&#x1f4be;</a>
-                    @if (canExpire)
-                    {
-                        <a asp-action="ResetTimer"
-                           asp-route-type="State"
-                           asp-route-id="@state.GameId"
-                           title="Reset expiration timer"
-                           class="btn btn-info">&#x23f1;&#xfe0f;</a>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<h2>SRAM Data</h2>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Game</th>
-            <th>Expires</th>
-            <th>Actions</th>
+                }
+                else
+                {
+                    <text>-</text>
+                }
+            </td>
+            <td>
+                <a href="@state.GetDataBase64Url()"
+                   download="@state.SaveGameName"
+                   title="Download state to use in your own emulator"
+                   class="btn btn-success">&#x1f4be;</a>
+                @if (canExpire)
+                {
+                    <a asp-action="ResetTimer"
+                       asp-route-type="State"
+                       asp-route-id="@state.GameId"
+                       title="Reset expiration timer"
+                       class="btn btn-info">&#x23f1;&#xfe0f;</a>
+                }
+            </td>
         </tr>
-    </thead>
-    <tbody>
-        @foreach (var state in Model.SRAMs)
-        {
-            <tr>
-                <td>
-                    <a asp-action="Play" asp-controller="Rom" asp-route-id="@state.GameId" title="Click to play">
-                        @state.GameName
-                    </a><br />
-                    @state.Platform
-                </td>
-                <td>
-                    @if (canExpire)
-                    {
-                        var exp = state.Created.AddDays(Model.DeleteDaysBack);
-                        var days = exp.Subtract(DateTime.UtcNow);
-                        @exp.ToString("R")
+    }
+    <tr>
+        <td colspan="4"><h2>SRAM Data</h2></td>
+    </tr>
+    <tr>
+        <th>Game</th>
+        <th>Preview</th>
+        <th>Expires</th>
+        <th>Actions</th>
+    </tr>
+    @if (Model.SRAMs.Count == 0)
+    {
+        <tr>
+            <td colspan="4"><i>No SRAM files exist yet</i></td>
+        </tr>
+    }
+    @foreach (var state in Model.SRAMs)
+    {
+        <tr>
+            <td>
+                <a asp-action="Play" asp-controller="Rom" asp-route-id="@state.GameId" title="Click to play">
+                    @state.GameName
+                </a><br />
+                @state.Platform
+            </td>
+            <td>
+                <img src="@state.GetImageBase64Url()" alt="Screenshot of when the game was saved" class="screenshot img-thumbnail" />
+            </td>
+            <td>
+                @if (canExpire)
+                {
+                    var exp = state.Created.AddDays(Model.DeleteDaysBack);
+                    var days = exp.Subtract(DateTime.UtcNow);
+                    @exp.ToString("R")
 
-                        <br />
-                        if (days.Days > 0)
-                        {
-                            <text>Expires in @days.TotalDays.ToString("0.0") days</text>
-                        }
-                        else
-                        {
-                            <span class="alert-danger">Expires in less than a day</span>
-                        }
+                    <br />
+                    if (days.Days > 0)
+                    {
+                        <text>Expires in @days.TotalDays.ToString("0.0") days</text>
                     }
                     else
                     {
-                        <text>-</text>
+                        <span class="alert-danger">Expires in less than a day</span>
                     }
-                </td>
-                <td>
-                    <a href="@state.GetDataBase64Url()"
-                       download="@state.SaveGameName"
-                       title="Download state to use in your own emulator"
-                       class="btn btn-success">&#x1f4be;</a>
-                    @if (canExpire)
-                    {
-                        <a asp-action="ResetTimer"
-                           asp-route-type="SRAM"
-                           asp-route-id="@state.GameId"
-                           title="Reset expiration timer"
-                           class="btn btn-info">&#x23f1;&#xfe0f;</a>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
+                }
+                else
+                {
+                    <text>-</text>
+                }
+            </td>
+            <td>
+                <a href="@state.GetDataBase64Url()"
+                   download="@state.SaveGameName"
+                   title="Download state to use in your own emulator"
+                   class="btn btn-success">&#x1f4be;</a>
+                @if (canExpire)
+                {
+                    <a asp-action="ResetTimer"
+                       asp-route-type="SRAM"
+                       asp-route-id="@state.GameId"
+                       title="Reset expiration timer"
+                       class="btn btn-info">&#x23f1;&#xfe0f;</a>
+                }
+            </td>
+        </tr>
+    }
 </table>

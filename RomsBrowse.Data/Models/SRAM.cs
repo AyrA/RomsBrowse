@@ -25,6 +25,9 @@ namespace RomsBrowse.Data.Models
         public DateTime Created { get; set; }
 
         [Required, MaxLength(1024 * 1024)]
+        public byte[] Image { get; set; }
+
+        [Required, MaxLength(1024 * 1024)]
         public byte[] Data { get; set; }
 
         public void Validate()

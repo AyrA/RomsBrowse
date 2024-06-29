@@ -93,7 +93,7 @@ namespace RomsBrowse.Web.Services
             return await ctx.SaveStates.AsNoTracking().AnyAsync(m => m.RomFileId == gameId && m.UserId == user.Id);
         }
 
-        public async Task SaveSRAM(int gameId, string username, byte[] sramData)
+        public async Task SaveSRAM(int gameId, string username, byte[] imageData, byte[] sramData)
         {
             var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
             if (user == null)
@@ -130,20 +130,23 @@ namespace RomsBrowse.Web.Services
                 ctx.SRAMs.Add(sram);
             }
             sram.Created = DateTime.UtcNow;
+            sram.Image = imageData;
             sram.Data = compressor.Compress(sramData);
             sram.Validate();
             user.LastActivity = DateTime.UtcNow;
             await ctx.SaveChangesAsync();
         }
 
-        public Task SaveSRAM(int gameId, string username, Stream stateData)
+        public Task SaveSRAM(int gameId, string username, Stream imageData, Stream stateData)
         {
             using var ms1 = new MemoryStream();
+            using var ms2 = new MemoryStream();
             stateData.CopyTo(ms1);
-            return SaveSRAM(gameId, username, ms1.ToArray());
+            imageData.CopyTo(ms2);
+            return SaveSRAM(gameId, username, ms2.ToArray(), ms1.ToArray());
         }
 
-        public async Task<byte[]?> GetSRAM(int gameId, string username)
+        public async Task<LoadStateModel?> GetSRAM(int gameId, string username)
         {
             if (gameId < 1)
             {
@@ -160,7 +163,7 @@ namespace RomsBrowse.Web.Services
             {
                 return null;
             }
-            return compressor.Decompress(sram.Data);
+            return new(sram.Image, compressor.Decompress(sram.Data));
         }
 
         public async Task<bool> HasSRAM(int gameId, string username)

@@ -12,10 +12,17 @@ namespace RomsBrowse.Web.ViewModels
         [Required]
         public IFormFile? SaveState { get; set; }
 
-        [MemberNotNull(nameof(SaveState))]
+        [Required]
+        public IFormFile? Screenshot { get; set; }
+
+        [MemberNotNull(nameof(SaveState), nameof(Screenshot))]
         public void Validate()
         {
             ValidationTools.ValidatePublic(this);
+            if (Screenshot!.Length == 0)
+            {
+                throw new Common.ValidationException(nameof(Screenshot), "Screenshot cannot be empty");
+            }
             if (SaveState!.Length == 0)
             {
                 throw new Common.ValidationException(nameof(SaveState), "SaveState cannot be empty");

@@ -21,6 +21,7 @@ type EmulatorGameManager = {
     getSaveFile: () => Promise<Uint8Array | null>;
     getSaveFilePath: () => string | null;
     loadSaveFiles: () => void;
+    screenshot: () => Promise<Uint8Array | null>;
 };
 
 type EmulatorGameFunctions = {

@@ -7,6 +7,8 @@ namespace RomsBrowse.Web.ViewModels
     {
         public byte[] Data { get; } = compressor.Decompress(sram.Data);
 
+        public byte[] Image { get; } = sram.Image;
+
         public DateTime Created { get; } = sram.Created;
 
         public int GameId { get; } = sram.RomFileId;
@@ -20,6 +22,11 @@ namespace RomsBrowse.Web.ViewModels
         public string GetDataBase64Url()
         {
             return "data:application/octet-stream;base64," + Convert.ToBase64String(Data);
+        }
+
+        public string GetImageBase64Url()
+        {
+            return "data:image/png;base64," + Convert.ToBase64String(Image);
         }
     }
 }

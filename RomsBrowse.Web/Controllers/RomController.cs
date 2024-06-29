@@ -172,10 +172,11 @@ if (WasmCheck.reportWebAssembly()) {{
             }
 
             using var data = model.SaveState.OpenReadStream();
+            using var image = model.Screenshot.OpenReadStream();
 
             try
             {
-                await saveStateService.SaveSRAM(model.GameId, UserName!, data);
+                await saveStateService.SaveSRAM(model.GameId, UserName!, image, data);
             }
             catch (Exception ex)
             {
@@ -203,7 +204,7 @@ if (WasmCheck.reportWebAssembly()) {{
                 return NotFound();
             }
 
-            return File(sramData, "application/octet-stream");
+            return File(sramData.Data, "application/octet-stream");
         }
 
         public bool CanPlay()

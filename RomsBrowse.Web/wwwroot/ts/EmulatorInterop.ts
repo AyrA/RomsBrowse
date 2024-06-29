@@ -3,6 +3,14 @@
 /** Provides emulator interaction */
 namespace EmulatorInterop {
     /**
+     * Export current screen as PNG
+     * @returns Screen data, or null if no screen ready
+     */
+    export function getScreenshot(): Promise<Uint8Array | null> {
+        return EJS_emulator.gameManager.screenshot();
+    }
+
+    /**
      * Gets SRAM data from the emulator
      * @returns SRAM data, or null if game or system has no SRAM
      */
