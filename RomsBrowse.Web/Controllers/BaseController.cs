@@ -4,13 +4,19 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Services;
+using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
+using System.Text;
 
 namespace RomsBrowse.Web.Controllers
 {
     public abstract class BaseController(UserService userService) : Controller
     {
+        private const string MessageCookieKey = "RedirectMessage";
+        private static ITempEncryptionService? _encryptionService;
+
         /// <summary>
         /// Gets the user name of the currently logged in user
         /// </summary>
@@ -65,6 +71,31 @@ namespace RomsBrowse.Web.Controllers
             ViewData["CurrentUrl"] = CurrentUrl;
             ViewData["User"] = new UserViewModel(user);
             ViewData["HasAdmin"] = await userService.HasAdmin();
+
+            if (_encryptionService != null && Request.Cookies.TryGetValue(MessageCookieKey, out var redirMessage))
+            {
+                Response.Cookies.Delete(MessageCookieKey);
+                try
+                {
+                    var data = Encoding.UTF8.GetString(_encryptionService.Decrypt(Convert.FromBase64String(redirMessage))).FromJson<string[]>();
+                    if (data != null && data.Length == 2)
+                    {
+                        if (data[1] == bool.TrueString)
+                        {
+                            SetSuccessMessage(data[0]);
+                        }
+                        else
+                        {
+                            SetErrorMessage(data[0]);
+                        }
+                    }
+                }
+                catch
+                {
+                    //NOOP
+                }
+            }
+
             await base.OnActionExecutionAsync(context, next);
         }
 
@@ -91,6 +122,11 @@ namespace RomsBrowse.Web.Controllers
             base.OnActionExecuted(context);
         }
 
+        public static void SetEncryptionService(ITempEncryptionService encryptionService)
+        {
+            _encryptionService = encryptionService;
+        }
+
         /// <summary>
         /// Redirect to login page,
         /// adding information to redirect back to the current location into the URL
@@ -110,6 +146,19 @@ namespace RomsBrowse.Web.Controllers
         {
             return Redirect(ReturnUrl ?? "/");
         }
+
+        protected void SetRedirectMessage(string message, bool isSuccess)
+        {
+            if (_encryptionService == null)
+            {
+                throw new InvalidOperationException("Encryption service not initialized");
+            }
+            var serialized = new string[] { message, isSuccess ? bool.TrueString : bool.FalseString }.ToJson();
+            var cookieValue = Convert.ToBase64String(_encryptionService.Encrypt(Encoding.UTF8.GetBytes(serialized)));
+            Response.Cookies.Append(MessageCookieKey, cookieValue);
+        }
+
+        protected void SetRedirectMessage(Exception ex) => SetRedirectMessage(ex.Message, false);
 
         protected void SetSuccessMessage(string message)
         {

@@ -18,7 +18,9 @@
 using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
+using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
+using RomsBrowse.Web.Controllers;
 using RomsBrowse.Web.Services;
 using System.Globalization;
 
@@ -87,10 +89,17 @@ SetThreadLanguage("de-ch");
 await MigrateAsync();
 await InitDataFields();
 await InitDefaultSettings();
+InitDefaultParams();
 
 await app.RunAsync();
 
 // Helper
+
+void InitDefaultParams()
+{
+    var enc = app.Services.GetRequiredService<ITempEncryptionService>();
+    BaseController.SetEncryptionService(enc);
+}
 
 async Task InitDataFields()
 {

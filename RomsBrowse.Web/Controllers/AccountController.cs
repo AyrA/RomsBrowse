@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Common.Services;
 using RomsBrowse.Data.Enums;
-using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 
@@ -25,7 +24,7 @@ namespace RomsBrowse.Web.Controllers
             _saveService = saveService;
         }
 
-        public IActionResult Index() => RedirectToAction("Saves");
+        public IActionResult Index() => RedirectToAction(nameof(Saves));
 
         public async Task<IActionResult> Saves()
         {
@@ -36,25 +35,37 @@ namespace RomsBrowse.Web.Controllers
             vm.MaxSaves = maxSaves;
             vm.DeleteDaysBack = maxAge;
 
-            return View(nameof(Saves), vm);
+            return View(vm);
         }
 
-        public async Task<IActionResult> ResetTimer(int id, [FromQuery] string type)
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetTimer(SaveOperationViewModel model)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(type) || !Enum.TryParse(type, true, out SaveType t))
-                {
-                    throw new ArgumentException("Invalid save type");
-                }
-                await _saveService.ResetTimer(id, UserName!, t);
-                SetSuccessMessage($"{t} expiration timer was reset");
+                await _saveService.ResetTimer(model.Id, UserName!, model.Type);
+                SetRedirectMessage($"{model.Type} expiration timer was reset", true);
             }
             catch (Exception ex)
             {
-                SetErrorMessage(ex);
+                SetRedirectMessage(ex);
             }
-            return await Saves();
+            return RedirectToAction(nameof(Saves));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSave(SaveOperationViewModel model)
+        {
+            try
+            {
+                await _saveService.Delete(model.Id, UserName!, model.Type);
+                SetRedirectMessage($"{model.Type} was deleted", true);
+            }
+            catch (Exception ex)
+            {
+                SetRedirectMessage(ex);
+            }
+            return RedirectToAction(nameof(Saves));
         }
 
         [HttpGet]
