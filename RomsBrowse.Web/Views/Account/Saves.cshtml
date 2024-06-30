@@ -83,15 +83,23 @@ This page contains a list of all your saved games and saved states.
                    class="btn btn-success">&#x1f4be;</a>
                 @if (canExpire)
                 {
-                    <a asp-action="ResetTimer"
-                       asp-route-type="State"
-                       asp-route-id="@state.GameId"
-                       title="Reset expiration timer"
-                       class="btn btn-info">&#x23f1;&#xfe0f;</a>
+                    <form class="d-inline" method="post" asp-action="ResetTimer">
+                        <input type="hidden" name="Id" value="@state.GameId" />
+                        <input type="hidden" name="Type" value="State" />
+                        <input type="submit" class="btn btn-info" value="&#x23f1;&#xfe0f;"
+                               title="Reset expiration timer" />
+                    </form>
                 }
+                <form class="d-inline" method="post" asp-action="DeleteSave">
+                    <input type="hidden" name="Id" value="@state.GameId" />
+                    <input type="hidden" name="Type" value="State" />
+                    <input type="submit" class="btn btn-danger" value="&#x1f5d1;"
+                           title="Delete this save" />
+                </form>
             </td>
         </tr>
     }
+    @*Doing states and SRAM in one table ensures the colums line up*@
     <tr>
         <td colspan="4"><h2>SRAM Data</h2></td>
     </tr>
@@ -148,12 +156,19 @@ This page contains a list of all your saved games and saved states.
                    class="btn btn-success">&#x1f4be;</a>
                 @if (canExpire)
                 {
-                    <a asp-action="ResetTimer"
-                       asp-route-type="SRAM"
-                       asp-route-id="@state.GameId"
-                       title="Reset expiration timer"
-                       class="btn btn-info">&#x23f1;&#xfe0f;</a>
+                    <form class="d-inline" method="post" asp-action="ResetTimer">
+                        <input type="hidden" name="Id" value="@state.GameId" />
+                        <input type="hidden" name="Type" value="SRAM" />
+                        <input type="submit" class="btn btn-info" value="&#x23f1;&#xfe0f;"
+                               title="Reset expiration timer" />
+                    </form>
                 }
+                <form class="d-inline" method="post" asp-action="DeleteSave">
+                    <input type="hidden" name="Id" value="@state.GameId" />
+                    <input type="hidden" name="Type" value="SRAM" />
+                    <input type="submit" class="btn btn-danger" value="&#x1f5d1;"
+                           title="Delete this save" />
+                </form>
             </td>
         </tr>
     }

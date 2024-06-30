@@ -246,5 +246,32 @@ namespace RomsBrowse.Web.Services
                 throw new Exception($"No {state} data found for this game");
             }
         }
+
+        public async Task Delete(int gameId, string username, SaveType state)
+        {
+            var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username)
+                ?? throw new Exception("User does not exist");
+            int changed = 0;
+            if (state == SaveType.State)
+            {
+                changed = await ctx.SaveStates
+                    .Where(m => m.UserId == user.Id && m.RomFileId == gameId)
+                    .ExecuteDeleteAsync();
+            }
+            else if (state == SaveType.SRAM)
+            {
+                changed = await ctx.SRAMs
+                    .Where(m => m.UserId == user.Id && m.RomFileId == gameId)
+                    .ExecuteDeleteAsync();
+            }
+            else
+            {
+                throw new Exception("Invalid save type");
+            }
+            if (changed == 0)
+            {
+                throw new Exception($"No {state} data found for this game");
+            }
+        }
     }
 }
