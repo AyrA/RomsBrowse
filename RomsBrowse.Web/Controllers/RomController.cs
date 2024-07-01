@@ -123,7 +123,7 @@ if (WasmCheck.reportWebAssembly()) {{
 
             try
             {
-                await saveStateService.SaveState(model.GameId, UserName!, img, data);
+                await saveStateService.SaveData(model.GameId, UserName!, img, data);
             }
             catch (Exception ex)
             {

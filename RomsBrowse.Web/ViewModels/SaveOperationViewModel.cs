@@ -1,6 +1,6 @@
 ﻿using RomsBrowse.Common;
 using RomsBrowse.Common.Interfaces;
-using RomsBrowse.Web.ServiceModels;
+using RomsBrowse.Data.Enums;
 
 namespace RomsBrowse.Web.ViewModels
 {
@@ -8,7 +8,7 @@ namespace RomsBrowse.Web.ViewModels
     {
         public int Id { get; set; }
 
-        public SaveType Type { get; set; }
+        public SaveFlags Type { get; set; }
 
         public void Validate()
         {
@@ -16,7 +16,7 @@ namespace RomsBrowse.Web.ViewModels
             {
                 throw new ValidationException(nameof(Id), "Game id is invalid");
             }
-            if (!Enum.IsDefined(Type) || Type == SaveType.None)
+            if (Type != SaveFlags.State && Type != SaveFlags.SRAM)
             {
                 throw new ValidationException(nameof(Type), "Invalid save type");
             }

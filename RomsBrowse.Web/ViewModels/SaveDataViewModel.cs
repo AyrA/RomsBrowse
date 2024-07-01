@@ -3,7 +3,7 @@ using RomsBrowse.Data.Models;
 
 namespace RomsBrowse.Web.ViewModels
 {
-    public class SaveStateViewModel(SaveState state, ICompressionService compressor)
+    public class SaveDataViewModel(SaveData state, ICompressionService compressor)
     {
         public byte[] Screenshot { get; } = state.Image;
 

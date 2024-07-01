@@ -6,8 +6,8 @@
 
         public int MaxSaves { get; set; }
 
-        public List<SaveStateViewModel> SaveStates { get; } = [];
+        public List<SaveDataViewModel> SaveStates { get; } = [];
 
-        public List<SRAMViewModel> SRAMs { get; } = [];
+        public List<SaveDataViewModel> SRAMs { get; } = [];
     }
 }

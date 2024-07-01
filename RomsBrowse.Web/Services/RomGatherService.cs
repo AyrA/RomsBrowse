@@ -65,8 +65,7 @@ namespace RomsBrowse.Web.Services
                 {
                     using var scope = provider.CreateScope();
                     var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
-                    await ctx.SaveStates.ExecuteDeleteAsync();
-                    await ctx.SRAMs.ExecuteDeleteAsync();
+                    await ctx.SaveData.ExecuteDeleteAsync();
                     await ctx.RomFiles.ExecuteDeleteAsync();
                     await ctx.Platforms.ExecuteDeleteAsync();
                     UpdateMenu();
@@ -139,7 +138,7 @@ namespace RomsBrowse.Web.Services
                 logger.LogInformation("Configured rom directories: {Dirs}", names);
                 var platforms = ctx.Platforms
                     .Include(m => m.RomFiles)
-                    .ThenInclude(m => m.SaveStates)
+                    .ThenInclude(m => m.SaveData)
                     .AsNoTracking()
                     .ToList();
 
@@ -292,7 +291,7 @@ namespace RomsBrowse.Web.Services
                 }
             }
             //Delete ROMS that no longer exist
-            ctx.SaveStates.RemoveRange(pending.SelectMany(m => m.SaveStates));
+            ctx.SaveData.RemoveRange(pending.SelectMany(m => m.SaveData));
             ctx.RomFiles.RemoveRange(pending);
             return ctx.SaveChanges();
         }
@@ -304,7 +303,7 @@ namespace RomsBrowse.Web.Services
             {
                 CheckAbort();
                 logger.LogInformation("Deleting {Count} ROMs from {Name}...", platform.RomFiles.Count, platform.DisplayName);
-                ctx.SaveStates.RemoveRange(platform.RomFiles.SelectMany(m => m.SaveStates));
+                ctx.SaveData.RemoveRange(platform.RomFiles.SelectMany(m => m.SaveData));
                 ctx.RomFiles.RemoveRange(platform.RomFiles);
                 ctx.Platforms.Remove(platform);
                 count += ctx.SaveChanges();

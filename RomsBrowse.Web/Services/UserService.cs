@@ -64,7 +64,7 @@ namespace RomsBrowse.Web.Services
         public async Task Delete(string userName)
         {
             var user = await ctx.Users
-                .Include(m => m.SaveStates)
+                .Include(m => m.SaveData)
                 .FirstOrDefaultAsync(m => m.Username == userName);
             if (user != null)
             {
@@ -72,7 +72,7 @@ namespace RomsBrowse.Web.Services
                 {
                     throw new InvalidOperationException("Cannot delete an administrator. Remove the flag first");
                 }
-                ctx.SaveStates.RemoveRange(user.SaveStates);
+                ctx.SaveData.RemoveRange(user.SaveData);
                 ctx.Users.Remove(user);
                 await ctx.SaveChangesAsync();
             }
@@ -85,8 +85,8 @@ namespace RomsBrowse.Web.Services
                 logger.LogInformation("Running user cleanup. Removing entries older than {Cutoff}", maxAge);
                 var cutoff = DateTime.UtcNow.Subtract(maxAge);
                 var total =
-                    ctx.SaveStates.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(UserFlags.Admin) && !m.User.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete() +
-                    ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(UserFlags.Admin) && !m.Flags.HasFlag(Data.Enums.UserFlags.NoExpireUser)).ExecuteDelete();
+                    ctx.SaveData.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(UserFlags.Admin) && !m.User.Flags.HasFlag(UserFlags.NoExpireUser)).ExecuteDelete() +
+                    ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(UserFlags.Admin) && !m.Flags.HasFlag(UserFlags.NoExpireUser)).ExecuteDelete();
                 if (total > 0)
                 {
                     hasAdmin = false;

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Common;
 using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Data.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace RomsBrowse.Data.Models
@@ -8,8 +9,8 @@ namespace RomsBrowse.Data.Models
 #nullable disable
     [Index(nameof(UserId), nameof(RomFileId), IsUnique = true)]
     [Index(nameof(Created))]
-    [PrimaryKey(nameof(UserId), nameof(RomFileId))]
-    public class SRAM : IValidateable
+    [PrimaryKey(nameof(UserId), nameof(RomFileId), nameof(Flags))]
+    public class SaveData : IValidateable
     {
         [Required]
         public User User { get; set; }
@@ -24,6 +25,9 @@ namespace RomsBrowse.Data.Models
         [Required]
         public DateTime Created { get; set; }
 
+        [ValidEnum]
+        public SaveFlags Flags { get; set; }
+
         [Required, MaxLength(1024 * 1024)]
         public byte[] Image { get; set; }
 
@@ -33,6 +37,10 @@ namespace RomsBrowse.Data.Models
         public void Validate()
         {
             ValidationTools.ValidatePublic(this);
+            if (Flags == 0)
+            {
+                throw new Common.ValidationException(nameof(Flags), "Flags are not set");
+            }
         }
     }
 #nullable restore

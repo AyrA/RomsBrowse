@@ -32,7 +32,7 @@ namespace RomsBrowse.Data.Models
 
         public int PlatformId { get; set; }
 
-        public virtual ICollection<SaveState> SaveStates { get; set; }
+        public virtual ICollection<SaveData> SaveData { get; set; }
 
         public void Validate()
         {

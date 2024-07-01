@@ -3,7 +3,7 @@ using RomsBrowse.Data.Models;
 
 namespace RomsBrowse.Web.ViewModels
 {
-    public class SRAMViewModel(SRAM sram, ICompressionService compressor)
+    public class SRAMViewModel(SaveData sram, ICompressionService compressor)
     {
         public byte[] Data { get; } = compressor.Decompress(sram.Data);
 

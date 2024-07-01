@@ -23,6 +23,7 @@ namespace RomsBrowse.Data.Models
 
         public DateTime LastActivity { get; set; }
 
+        [ValidEnum]
         public UserFlags Flags { get; set; }
 
         [NotMapped]
@@ -34,7 +35,7 @@ namespace RomsBrowse.Data.Models
         [NotMapped]
         public bool CanSignIn => IsAdmin || !Flags.HasFlag(UserFlags.Locked);
 
-        public virtual ICollection<SaveState> SaveStates { get; set; }
+        public virtual ICollection<SaveData> SaveData { get; set; }
 
         public void Validate()
         {

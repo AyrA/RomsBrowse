@@ -14,9 +14,7 @@ namespace RomsBrowse.Data
 
         public DbSet<RomFile> RomFiles { get; set; }
 
-        public DbSet<SaveState> SaveStates { get; set; }
-
-        public DbSet<SRAM> SRAMs { get; set; }
+        public DbSet<SaveData> SaveData { get; set; }
 
         public DbSet<User> Users { get; set; }
 
