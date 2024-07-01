@@ -6,6 +6,7 @@ using RomsBrowse.Data;
 using RomsBrowse.Data.Enums;
 using RomsBrowse.Data.Models;
 using RomsBrowse.Web.ServiceModels;
+using RomsBrowse.Web.ViewModels;
 using System.Security.Claims;
 
 namespace RomsBrowse.Web.Services
@@ -218,6 +219,34 @@ namespace RomsBrowse.Web.Services
             }
             user.Hash = passwordService.HashPassword(newPassword);
             await ctx.SaveChangesAsync();
+        }
+
+        public async Task<AccountsViewModel> GetAccounts(int page, int pageSize, string? search)
+        {
+            page = Math.Max(1, page);
+            pageSize = Math.Max(1, pageSize);
+            var users = await FilterUsers(search)
+                .OrderBy(m => m.Username)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var vm = new AccountsViewModel
+            {
+                Paging = new(page, (int)Math.Ceiling(users.Count / (double)pageSize), 2),
+                Accounts = users.Select(m => new AccountViewModel(m)).ToArray()
+            };
+            return vm;
+        }
+
+        private IQueryable<User> FilterUsers(string? username)
+        {
+            var users = ctx.Users.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(username))
+            {
+                users = users.Where(m => m.Username.Contains(username));
+            }
+            return users;
         }
     }
 }

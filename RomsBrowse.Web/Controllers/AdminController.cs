@@ -11,10 +11,17 @@ using System.Diagnostics.CodeAnalysis;
 namespace RomsBrowse.Web.Controllers
 {
     [Authorize(Roles = nameof(UserFlags.Admin))]
-    public class SettingsController(RomGatherService rgs, UserService userService, SettingsService ss) : BaseController(userService)
+    public class AdminController(RomGatherService rgs, UserService userService, SettingsService ss) : BaseController(userService)
     {
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Accounts(int page, string? search)
+        {
+            var vm = await userService.GetAccounts(page, 20, search);
+            return View(vm);
+        }
+
+        [HttpGet]
+        public IActionResult Settings()
         {
             var vm = new SettingsViewModel();
             vm.SetFromService(ss);
@@ -22,7 +29,7 @@ namespace RomsBrowse.Web.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public IActionResult Index(SettingsViewModel model)
+        public IActionResult Settings(SettingsViewModel model)
         {
             try
             {

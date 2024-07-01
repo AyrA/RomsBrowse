@@ -1,0 +1,39 @@
+﻿@model AccountsViewModel
+@{
+    ViewData["Title"] = "Accounts";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@await Html.PartialAsync("PartialPaging", Model.Paging)
+
+<table class="table">
+    <tr>
+        <th>Username</th>
+        <th>Last action</th>
+        <th>Properties</th>
+        <th>Actions</th>
+    </tr>
+    @foreach (var acc in Model.Accounts)
+    {
+        <tr>
+            <td>@acc.Username</td>
+            <td>@acc.LastActivity.ToString("R")</td>
+            <td>
+                @(acc.IsAdmin ? "Admin" : "Normal"),
+                @(acc.CanDelete ? "Deletable" : "Protected"),
+                @(acc.IsLocked ? "Locked" : "Enabled")
+            </td>
+            <td>
+                <form method="post" class="d-inline">
+                    <input type="hidden" name="Action" value="ChangeLock" />
+                    <input type="submit" class="btn btn-warning" value="&#x1f510;" />
+                </form>
+                <form method="post" class="d-inline">
+                    <input type="hidden" name="Action" value="Delete" />
+                    <input type="submit" class="btn btn-danger" value="&#x1f5d1;" />
+                </form>
+            </td>
+        </tr>
+    }
+</table>
