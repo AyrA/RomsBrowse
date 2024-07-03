@@ -48,7 +48,21 @@ builder.Services.AutoRegisterAllAssemblies();
 
 //.NET services
 builder.Services.AddControllersWithViews();
-builder.Services.AddAuthentication().AddCookie();
+builder.Services
+    .AddAuthentication()
+    .AddCookie(opts =>
+{
+    opts.ExpireTimeSpan = TimeSpan.FromDays(30);
+    opts.Cookie.HttpOnly = true;
+    opts.Cookie.IsEssential = true;
+    opts.Cookie.Name = "Session";
+    opts.Cookie.SameSite = SameSiteMode.Strict;
+    opts.Cookie.MaxAge = TimeSpan.FromDays(30);
+    opts.LoginPath = "/Account/Login";
+    opts.LogoutPath = "/Account/Logout";
+    opts.ReturnUrlParameter = "returnUrl";
+    //opts.Cookie.Expiration = TimeSpan.FromDays(30);
+});
 
 var app = builder.Build();
 

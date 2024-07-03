@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-namespace RomsBrowse.Common
+namespace RomsBrowse.Common.Validation
 {
     public static class ValidationTools
     {
@@ -129,19 +129,37 @@ namespace RomsBrowse.Common
                 }
                 else if (attr is SafePasswordAttribute)
                 {
-                    if (value is string s)
+                    if (value != null)
                     {
-                        if (value != null)
+                        if (value is string s)
                         {
                             if (!new PasswordCheckerService().IsSafePassword(s))
                             {
                                 throw new ValidationException(propName, "Password is not safe");
                             }
                         }
+                        else
+                        {
+                            throw new ValidationException(propName, $"Property {propName} has {nameof(SafePasswordAttribute)} but is not a string. Is: {value?.GetType()}");
+                        }
                     }
-                    else
+                }
+                else if (attr is ValidUsernameAttribute)
+                {
+                    if (value != null)
                     {
-                        throw new ValidationException(propName, $"Property {propName} has {nameof(SafePasswordAttribute)} but is not a string. Is: {value?.GetType()}");
+                        if (value is string s)
+                        {
+                            if (!ValidUsernameAttribute.IsValidUsername(s))
+                            {
+                                throw new ValidationException(propName,
+                                    $"Username is not valid. Must be {ValidUsernameAttribute.RegexDescription}");
+                            }
+                        }
+                        else
+                        {
+                            throw new ValidationException(propName, $"Property {propName} has {nameof(ValidUsernameAttribute)} but is not a string. Is: {value?.GetType()}");
+                        }
                     }
                 }
                 else if (attr is ValidEnumAttribute ea)

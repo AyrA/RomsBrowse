@@ -1,4 +1,6 @@
-﻿namespace RomsBrowse.Common.Interfaces
+﻿using RomsBrowse.Common.Validation;
+
+namespace RomsBrowse.Common.Interfaces
 {
     public interface IValidateable
     {

@@ -1,5 +1,5 @@
-﻿using RomsBrowse.Common;
-using RomsBrowse.Common.Interfaces;
+﻿using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Validation;
 using RomsBrowse.Data.Enums;
 
 namespace RomsBrowse.Web.ViewModels

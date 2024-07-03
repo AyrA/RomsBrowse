@@ -28,7 +28,12 @@ namespace RomsBrowse.Web.Services
         {
             return string.IsNullOrEmpty(username)
                 ? null
-                : await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+                : await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
+        }
+
+        public async Task<User?> Get(int userId)
+        {
+            return await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Id == userId);
         }
 
         public async Task<bool> Create(string username, string password)
@@ -67,16 +72,47 @@ namespace RomsBrowse.Web.Services
             var user = await ctx.Users
                 .Include(m => m.SaveData)
                 .FirstOrDefaultAsync(m => m.Username == userName);
-            if (user != null)
-            {
-                if (user.IsAdmin)
-                {
-                    throw new InvalidOperationException("Cannot delete an administrator. Remove the flag first");
-                }
-                ctx.SaveData.RemoveRange(user.SaveData);
-                ctx.Users.Remove(user);
-                await ctx.SaveChangesAsync();
-            }
+            await DeleteUser(user);
+        }
+
+        public async Task Delete(int userId)
+        {
+            var user = await ctx.Users
+                .Include(m => m.SaveData)
+                .FirstOrDefaultAsync(m => m.Id == userId);
+            await DeleteUser(user);
+        }
+
+        public async Task ChangeLock(string userName)
+        {
+            var user = await ctx.Users
+                .Include(m => m.SaveData)
+                .FirstOrDefaultAsync(m => m.Username == userName);
+            await ChangeLock(user);
+        }
+
+        public async Task ChangeLock(int userId)
+        {
+            var user = await ctx.Users
+                .Include(m => m.SaveData)
+                .FirstOrDefaultAsync(m => m.Id == userId);
+            await ChangeLock(user);
+        }
+
+        public async Task ChangeAdmin(string userName)
+        {
+            var user = await ctx.Users
+                .Include(m => m.SaveData)
+                .FirstOrDefaultAsync(m => m.Username == userName);
+            await ChangeAdmin(user);
+        }
+
+        public async Task ChangeAdmin(int userId)
+        {
+            var user = await ctx.Users
+                .Include(m => m.SaveData)
+                .FirstOrDefaultAsync(m => m.Id == userId);
+            await ChangeAdmin(user);
         }
 
         public int Cleanup(TimeSpan maxAge)
@@ -239,6 +275,19 @@ namespace RomsBrowse.Web.Services
             return vm;
         }
 
+        public void SetNewPassword(User user, string newPassword)
+        {
+            passwordChecker.EnsureSafePassword(newPassword);
+            user.Hash = passwordService.HashPassword(newPassword);
+        }
+
+        public async Task SaveChanges(User user)
+        {
+            user.Validate();
+            ctx.Users.Update(user);
+            await ctx.SaveChangesAsync();
+        }
+
         private IQueryable<User> FilterUsers(string? username)
         {
             var users = ctx.Users.AsQueryable();
@@ -247,6 +296,60 @@ namespace RomsBrowse.Web.Services
                 users = users.Where(m => m.Username.Contains(username));
             }
             return users;
+        }
+
+        private async Task DeleteUser(User? user)
+        {
+            if (user == null)
+            {
+                ArgumentNullException.ThrowIfNull(user);
+            }
+            if (!user.CanDelete)
+            {
+                throw new InvalidOperationException("Cannot delete user. Admins and users without expiration cannot de deleted, and the flags need to be removed first");
+            }
+            if (!user.IsLocked)
+            {
+                throw new InvalidOperationException("To confirm account removal, the account must be locked first.");
+            }
+            ctx.SaveData.RemoveRange(user.SaveData);
+            ctx.Users.Remove(user);
+            await ctx.SaveChangesAsync();
+        }
+
+        private async Task ChangeLock(User? user)
+        {
+            if (user == null)
+            {
+                ArgumentNullException.ThrowIfNull(user);
+            }
+            if (user.IsAdmin && !user.IsLocked)
+            {
+                throw new InvalidOperationException("Cannot lock admins. Remove the admin flag first");
+            }
+            user.IsLocked = !user.IsLocked;
+            await ctx.SaveChangesAsync();
+        }
+
+        private async Task ChangeAdmin(User? user)
+        {
+            if (user == null)
+            {
+                ArgumentNullException.ThrowIfNull(user);
+            }
+            if (user.IsAdmin)
+            {
+                if (ctx.Users.Count(m => m.Flags.HasFlag(UserFlags.Admin)) < 2)
+                {
+                    throw new InvalidOperationException("Cannot demote the last admin. Promote a different user to admininistator before removing the admin flag from this user");
+                }
+            }
+            user.IsAdmin = !user.IsAdmin;
+            if (user.IsAdmin)
+            {
+                user.IsLocked = false;
+            }
+            await ctx.SaveChangesAsync();
         }
     }
 }

@@ -8,6 +8,8 @@ namespace RomsBrowse.Web.ViewModels
 
         public bool IsAdmin => user?.IsAdmin ?? false;
 
-        public string? UserName { get; } = user?.Username;
+        public string? UserName => user?.Username;
+
+        public int Id => user?.Id ?? 0;
     }
 }

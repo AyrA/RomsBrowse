@@ -16,12 +16,15 @@ namespace RomsBrowse.Web.Controllers
     {
         private const string MessageCookieKey = "RedirectMessage";
         private static ITempEncryptionService? _encryptionService;
+        private UserViewModel? _currentUser;
 
         /// <summary>
         /// Gets the user name of the currently logged in user
         /// </summary>
         /// <remarks><see cref="IsLoggedIn"/> should be checked first</remarks>
         protected string? UserName => User.Identity?.Name;
+
+        protected UserViewModel? CurrentUser => _currentUser;
 
         /// <summary>
         /// Gets if the user is logged in
@@ -69,7 +72,7 @@ namespace RomsBrowse.Web.Controllers
                 context.Result = new RedirectResult("/");
             }
             ViewData["CurrentUrl"] = CurrentUrl;
-            ViewData["User"] = new UserViewModel(user);
+            ViewData["User"] = _currentUser = new UserViewModel(user);
             ViewData["HasAdmin"] = await userService.HasAdmin();
 
             if (_encryptionService != null && Request.Cookies.TryGetValue(MessageCookieKey, out var redirMessage))

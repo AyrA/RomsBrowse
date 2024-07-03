@@ -1,5 +1,5 @@
-﻿using RomsBrowse.Common;
-using RomsBrowse.Common.Interfaces;
+﻿using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -28,11 +28,11 @@ namespace RomsBrowse.Web.ViewModels
             ValidationTools.ValidatePublic(this);
             if (NewPassword1 != NewPassword2)
             {
-                throw new Common.ValidationException(nameof(NewPassword2), "New passwords are not identical");
+                throw new Common.Validation.ValidationException(nameof(NewPassword2), "New passwords are not identical");
             }
             if (OldPassword == NewPassword1)
             {
-                throw new Common.ValidationException(nameof(NewPassword1), "New password cannot be the same as the old password");
+                throw new Common.Validation.ValidationException(nameof(NewPassword1), "New password cannot be the same as the old password");
             }
         }
 #pragma warning restore CS8774 // Member must have a non-null value when exiting.

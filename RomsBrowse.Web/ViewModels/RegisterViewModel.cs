@@ -1,5 +1,5 @@
-﻿using RomsBrowse.Common;
-using RomsBrowse.Common.Interfaces;
+﻿using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
@@ -7,7 +7,7 @@ namespace RomsBrowse.Web.ViewModels
 {
     public class RegisterViewModel : IValidateable, ISensitiveData
     {
-        [Required]
+        [Required, ValidUsername]
         public string? Username { get; set; }
 
         [Required, SafePassword]
@@ -36,7 +36,7 @@ namespace RomsBrowse.Web.ViewModels
             ValidationTools.ValidatePublic(this);
             if (Password1 != Password2)
             {
-                throw new Common.ValidationException(nameof(Password2), "Passwords do not match");
+                throw new Common.Validation.ValidationException(nameof(Password2), "Passwords do not match");
             }
         }
 #pragma warning restore CS8774 // Member must have a non-null value when exiting.

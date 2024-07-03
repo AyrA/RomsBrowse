@@ -1,0 +1,61 @@
+﻿@model AccountViewModel
+@{
+    var isCreate = Model.Id <= 0;
+    ViewData["Title"] = isCreate ? "Create user" : $"Edit user \"{Model.Username}\"";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<form method="post">
+    <input type="hidden" asp-for="Id" />
+    <div class="row mb-1">
+        <div class="col-md-4">
+            <label asp-for="Username">@(isCreate ? "Set" : "Change") username</label>
+            <input type="text" required asp-for="Username" class="form-control" placeholder="Username" />
+        </div>
+    </div>
+    <div class="row mb-1">
+        <div class="col-md-4">
+            <label asp-for="NewPassword1">Change password</label>
+            <input type="password" required="@isCreate" asp-for="NewPassword1" class="form-control" placeholder="New password" />
+        </div>
+        <div class="col-md-4">
+            <label asp-for="NewPassword2">Confirm new password</label>
+            <input type="password" required="@isCreate" asp-for="NewPassword2" class="form-control" placeholder="New password" />
+        </div>
+    </div>
+    @await Html.PartialAsync("PartialPasswordSafety")
+    <h2>Properties</h2>
+    <p>
+        Standard users have none of the flags below set
+    </p>
+    <div class="row mb-1">
+        <div class="col-md-12">
+            <label asp-for="IsAdmin">
+                <input asp-for="IsAdmin" />
+                Is administrator
+            </label>
+        </div>
+    </div>
+    <div class="mb-1">
+        <label asp-for="IsLocked">
+            <input asp-for="IsLocked" />
+            Is locked (no effect if admin flag is set)
+        </label>
+    </div>
+    <div class="mb-1">
+        <label asp-for="IgnoreExpire">
+            <input asp-for="IgnoreExpire" />
+            Ignore expiration timer for account
+            (this is always implied if admin flag is set)
+        </label>
+    </div>
+    <div class="mb-1">
+        <label asp-for="IgnoreExpireSaves">
+            <input asp-for="IgnoreExpireSaves" />
+            Ignore expiration timer for saves
+            (this is always implied if admin flag is set)
+        </label>
+    </div>
+    <input type="submit" class="btn btn-primary" value="@(isCreate ? "Create" : "Update")" />
+</form>

@@ -1,4 +1,4 @@
-﻿namespace RomsBrowse.Common
+﻿namespace RomsBrowse.Common.Validation
 {
     public class ValidationException(string fieldName, string? message, Exception? innerException) : Exception(message, innerException)
     {

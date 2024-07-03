@@ -1,5 +1,5 @@
-﻿using RomsBrowse.Common;
-using RomsBrowse.Common.Interfaces;
+﻿using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Validation;
 using RomsBrowse.Web.Services;
 using System.ComponentModel.DataAnnotations;
 
@@ -38,7 +38,7 @@ namespace RomsBrowse.Web.ViewModels
             ValidationTools.ValidatePublic(this);
             if (!Directory.Exists(RomsDirectory))
             {
-                throw new Common.ValidationException(nameof(RomsDirectory), "Directory does not exist");
+                throw new Common.Validation.ValidationException(nameof(RomsDirectory), "Directory does not exist");
             }
         }
     }

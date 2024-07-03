@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RomsBrowse.Common;
 using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Validation;
 using RomsBrowse.Data.Enums;
 using System.ComponentModel.DataAnnotations;
 
@@ -39,7 +39,7 @@ namespace RomsBrowse.Data.Models
             ValidationTools.ValidatePublic(this);
             if (Flags == 0)
             {
-                throw new Common.ValidationException(nameof(Flags), "Flags are not set");
+                throw new Common.Validation.ValidationException(nameof(Flags), "Flags are not set");
             }
         }
     }

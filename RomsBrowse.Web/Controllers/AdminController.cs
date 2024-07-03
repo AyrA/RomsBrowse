@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using RomsBrowse.Common;
+using RomsBrowse.Common.Validation;
 using RomsBrowse.Data.Enums;
 using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.ServiceModels;
@@ -11,20 +11,161 @@ using System.Diagnostics.CodeAnalysis;
 namespace RomsBrowse.Web.Controllers
 {
     [Authorize(Roles = nameof(UserFlags.Admin))]
-    public class AdminController(RomGatherService rgs, UserService userService, SettingsService ss) : BaseController(userService)
+    public class AdminController : BaseController
     {
+        private readonly UserService _userService;
+        private readonly RomGatherService _rgs;
+        private readonly SettingsService _ss;
+
+        public AdminController(RomGatherService rgs, UserService userService, SettingsService ss) : base(userService)
+        {
+            _userService = userService;
+            _rgs = rgs;
+            _ss = ss;
+        }
+
         [HttpGet]
         public async Task<IActionResult> Accounts(int page, string? search)
         {
-            var vm = await userService.GetAccounts(page, 20, search);
+            var vm = await _userService.GetAccounts(page, 20, search);
             return View(vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AccountEdit(int id)
+        {
+            if (CurrentUser!.Id == id)
+            {
+                SetRedirectMessage("Cannot edit your own user this way", false);
+                return RedirectToAction(nameof(Accounts));
+            }
+            var user = await _userService.Get(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            return View(new AccountViewModel(user));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AccountEdit(AccountViewModel model)
+        {
+            try
+            {
+                model.Validate();
+            }
+            catch (Exception ex)
+            {
+                SetRedirectMessage(ex);
+                return RedirectToAction(nameof(AccountEdit), new { model.Id });
+            }
+            if (CurrentUser!.Id == model.Id)
+            {
+                SetRedirectMessage("Cannot edit your own user this way", false);
+                return RedirectToAction(nameof(AccountEdit), new { model.Id });
+            }
+            var user = await _userService.Get(model.Id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+            try
+            {
+                user.Username = model.Username;
+                user.Flags = model.Flags;
+                if (!string.IsNullOrEmpty(model.NewPassword1))
+                {
+                    _userService.SetNewPassword(user, model.NewPassword1);
+                }
+                await _userService.SaveChanges(user);
+                SetRedirectMessage("User updated", true);
+            }
+            catch (Exception ex)
+            {
+                SetRedirectMessage(ex);
+            }
+            return RedirectToAction(nameof(AccountEdit), new { model.Id });
+        }
+
+        [HttpGet]
+        public IActionResult AccountCreate()
+        {
+            return View(nameof(AccountEdit), new AccountViewModel());
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AccountCreate(AccountViewModel model)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(model.NewPassword1))
+                {
+                    throw new Exception("Password is required");
+                }
+                model.Validate();
+            }
+            catch (Exception ex)
+            {
+                SetErrorMessage(ex);
+                return View(nameof(AccountEdit), model);
+            }
+            var user = await _userService.Get(model.Username);
+            if (user != null)
+            {
+                SetErrorMessage("A user with this name already exists");
+                return View(nameof(AccountEdit), model);
+            }
+            try
+            {
+                if (!await _userService.Create(model.Username, model.NewPassword1))
+                {
+                    throw new Exception("Failed to create user");
+                }
+                SetRedirectMessage("User created", true);
+                return RedirectToAction(nameof(Accounts));
+            }
+            catch (Exception ex)
+            {
+                SetErrorMessage(ex);
+            }
+            return View(nameof(AccountEdit), model);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> AccountAction(AccountActionRequestModel model)
+        {
+            if (string.IsNullOrEmpty(model?.Action) || model.UserId < 1)
+            {
+                return RedirectToAction(nameof(Accounts));
+            }
+            try
+            {
+                if (model.UserId == CurrentUser?.Id)
+                {
+                    throw new InvalidOperationException("Cannot edit or delete current user");
+                }
+                switch (model.Action)
+                {
+                    case "Delete":
+                        await _userService.Delete(model.UserId);
+                        SetRedirectMessage("User deleted", true);
+                        break;
+                    default:
+                        throw new Exception("Invalid action");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetRedirectMessage(ex);
+            }
+            return RedirectToAction(nameof(Accounts));
         }
 
         [HttpGet]
         public IActionResult Settings()
         {
             var vm = new SettingsViewModel();
-            vm.SetFromService(ss);
+            vm.SetFromService(_ss);
             return View(vm);
         }
 
@@ -42,22 +183,22 @@ namespace RomsBrowse.Web.Controllers
             }
             if (IsValidConfigOrDir(model.RomsDirectory))
             {
-                ss.AddOrUpdate(SettingsService.KnownSettings.RomDirectory, model.RomsDirectory);
+                _ss.AddOrUpdate(SettingsService.KnownSettings.RomDirectory, model.RomsDirectory);
             }
-            ss.AddOrUpdate(SettingsService.KnownSettings.AllowRegister, model.AllowRegister);
-            ss.AddOrUpdate(SettingsService.KnownSettings.AnonymousPlay, model.AllowAnonymousPlay);
-            ss.AddOrUpdate(SettingsService.KnownSettings.MaxSaveStatesPerUser, model.MaxSavesPerUser);
-            ss.AddOrUpdate(SettingsService.KnownSettings.SaveStateExpiration, TimeSpan.FromDays(model.SaveStateExpiryDays));
-            ss.AddOrUpdate(SettingsService.KnownSettings.UserExpiration, TimeSpan.FromDays(model.AccountExpiryDays));
+            _ss.AddOrUpdate(SettingsService.KnownSettings.AllowRegister, model.AllowRegister);
+            _ss.AddOrUpdate(SettingsService.KnownSettings.AnonymousPlay, model.AllowAnonymousPlay);
+            _ss.AddOrUpdate(SettingsService.KnownSettings.MaxSaveStatesPerUser, model.MaxSavesPerUser);
+            _ss.AddOrUpdate(SettingsService.KnownSettings.SaveStateExpiration, TimeSpan.FromDays(model.SaveStateExpiryDays));
+            _ss.AddOrUpdate(SettingsService.KnownSettings.UserExpiration, TimeSpan.FromDays(model.AccountExpiryDays));
             SetSuccessMessage("Settings updated. If you changed the Roms directory, perform a rescan");
             return View(model);
         }
 
         [HttpGet]
-        public IActionResult Actions() => View(new ActionViewModel(rgs.IsScanning));
+        public IActionResult Actions() => View(new ActionViewModel(_rgs.IsScanning));
 
         [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> ActionsAsync(ActionRequestModel model)
+        public async Task<IActionResult> Actions(ActionRequestModel model)
         {
             if (string.IsNullOrEmpty(model?.Action))
             {
@@ -66,9 +207,9 @@ namespace RomsBrowse.Web.Controllers
             switch (model.Action)
             {
                 case "Rescan":
-                    if (!rgs.IsScanning)
+                    if (!_rgs.IsScanning)
                     {
-                        rgs.Scan();
+                        _rgs.Scan();
                         SetSuccessMessage("A rescan has been initiated. Depending on the number of files that need to be indexed, it may run for a while");
                     }
                     else
@@ -77,9 +218,9 @@ namespace RomsBrowse.Web.Controllers
                     }
                     break;
                 case "Reset":
-                    if (!rgs.IsScanning)
+                    if (!_rgs.IsScanning)
                     {
-                        await rgs.Reset();
+                        await _rgs.Reset();
                         SetSuccessMessage("A reset has been performed. Perform a rescan to reindex the rom files");
                     }
                     else
@@ -91,7 +232,7 @@ namespace RomsBrowse.Web.Controllers
                     SetErrorMessage("Invalid action");
                     break;
             }
-            return View(new ActionViewModel(rgs.IsScanning));
+            return View(new ActionViewModel(_rgs.IsScanning));
         }
 
         public IActionResult Platforms() => View();

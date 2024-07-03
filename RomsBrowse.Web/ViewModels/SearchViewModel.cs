@@ -1,5 +1,5 @@
-﻿using RomsBrowse.Common;
-using RomsBrowse.Common.Interfaces;
+﻿using RomsBrowse.Common.Interfaces;
+using RomsBrowse.Common.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 
