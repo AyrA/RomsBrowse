@@ -1,14 +1,19 @@
 using Microsoft.AspNetCore.Mvc;
+using RomsBrowse.Data;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 using System.Diagnostics;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class HomeController(UserService userService, RomSearchService searchService, PlatformService platformService) : BaseController(userService)
+    public class HomeController(UserService userService, RomSearchService searchService, PlatformService platformService, RomsContext ctx) : BaseController(userService)
     {
         public IActionResult Index()
         {
+            if (!ctx.IsConfigured)
+            {
+                return RedirectToAction("Index", "Init");
+            }
             return View();
         }
 

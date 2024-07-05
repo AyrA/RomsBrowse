@@ -61,7 +61,6 @@ builder.Services
     opts.LoginPath = "/Account/Login";
     opts.LogoutPath = "/Account/Logout";
     opts.ReturnUrlParameter = "returnUrl";
-    //opts.Cookie.Expiration = TimeSpan.FromDays(30);
 });
 
 var app = builder.Build();
@@ -87,6 +86,8 @@ else
     app.UseExceptionHandler("/Home/Error");
 }
 
+app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+
 app.UseStaticFiles(new StaticFileOptions()
 {
     ServeUnknownFileTypes = true,
@@ -96,23 +97,33 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-
-//Run helpers
 SetThreadLanguage("de-ch");
-await MigrateAsync();
-await InitDataFields();
-await InitDefaultSettings();
-InitDefaultParams();
+if (IsDbConfigured())
+{
+    await MigrateAsync();
+    await InitDataFields();
+    await InitDefaultSettings();
+}
+else
+{
+    InitUnconfigured();
+}
+InitDefaultControllerParams();
 
 await app.RunAsync();
 
 // Helper
 
-void InitDefaultParams()
+void InitUnconfigured()
+{
+    //TODO
+}
+
+void InitDefaultControllerParams()
 {
     var enc = app.Services.GetRequiredService<ITempEncryptionService>();
-    BaseController.SetEncryptionService(enc);
+    var ss = app.Services.GetRequiredService<SetupService>();
+    BaseController.SetStaticServices(enc, ss);
 }
 
 async Task InitDataFields()
@@ -178,6 +189,13 @@ async Task MigrateAsync()
     {
         migLog.LogInformation("Database has no pending changes to be applied");
     }
+}
+
+bool IsDbConfigured()
+{
+    using var scope = app.Services.CreateScope();
+    var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
+    return ctx.IsConfigured;
 }
 
 static void ConfigureLogging(ILoggingBuilder builder)

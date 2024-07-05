@@ -7,7 +7,7 @@ using RomsBrowse.Web.Extensions;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class SettingsService(RomsContext ctx)
+    public class SettingsService(RomsContext ctx, SetupService ss)
     {
         public static class KnownSettings
         {
@@ -22,9 +22,9 @@ namespace RomsBrowse.Web.Services
 
         private static readonly Dictionary<string, string?> cache = new(StringComparer.InvariantCultureIgnoreCase);
 
-        private static void SetCache(RomsContext ctx)
+        private static void SetCache(RomsContext ctx, SetupService ss)
         {
-            if (cache.Count == 0)
+            if (cache.Count == 0 && ss.IsConfigured)
             {
                 foreach (var setting in ctx.Settings.AsNoTracking())
                 {
@@ -45,7 +45,7 @@ namespace RomsBrowse.Web.Services
                 ArgumentNullException.ThrowIfNull(name);
                 lock (cache)
                 {
-                    SetCache(ctx);
+                    SetCache(ctx, ss);
                     return cache.TryGetValue(name, out var value) ? value : null;
                 }
             }
@@ -54,7 +54,7 @@ namespace RomsBrowse.Web.Services
                 ArgumentNullException.ThrowIfNull(name);
                 lock (cache)
                 {
-                    SetCache(ctx);
+                    SetCache(ctx, ss);
                     var setting = new Setting()
                     {
                         Name = name,
@@ -87,7 +87,7 @@ namespace RomsBrowse.Web.Services
         {
             lock (cache)
             {
-                SetCache(ctx);
+                SetCache(ctx, ss);
                 return cache.ContainsKey(name);
             }
         }
@@ -102,7 +102,7 @@ namespace RomsBrowse.Web.Services
         {
             lock (cache)
             {
-                SetCache(ctx);
+                SetCache(ctx, ss);
                 if (cache.TryGetValue(name, out var s) && s != null)
                 {
                     return s.FromJson<T>();
@@ -121,7 +121,7 @@ namespace RomsBrowse.Web.Services
         {
             lock (cache)
             {
-                SetCache(ctx);
+                SetCache(ctx, ss);
                 if (cache.TryGetValue(name, out var raw))
                 {
                     value = raw == null ? default : raw.FromJson<T>();
@@ -142,7 +142,7 @@ namespace RomsBrowse.Web.Services
         {
             lock (cache)
             {
-                SetCache(ctx);
+                SetCache(ctx, ss);
                 return cache.TryGetValue(name, out value);
             }
         }
@@ -171,7 +171,7 @@ namespace RomsBrowse.Web.Services
             lock (cache)
             {
                 var parsed = value == null ? "null" : value.ToJson();
-                SetCache(ctx);
+                SetCache(ctx, ss);
                 if (!cache.ContainsKey(name))
                 {
                     this[name] = parsed;
@@ -191,7 +191,7 @@ namespace RomsBrowse.Web.Services
             ArgumentNullException.ThrowIfNull(name);
             lock (cache)
             {
-                SetCache(ctx);
+                SetCache(ctx, ss);
                 if (cache.Remove(name))
                 {
                     ctx.Settings.Where(m => m.Name == name).ExecuteDelete();

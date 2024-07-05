@@ -1,4 +1,5 @@
 ﻿using AyrA.AutoDI;
+using RomsBrowse.Data;
 
 namespace RomsBrowse.Web.Services
 {
@@ -29,13 +30,17 @@ namespace RomsBrowse.Web.Services
         private void Callback(object? state)
         {
             using var scope = provider.CreateScope();
-            var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
+            var db = scope.ServiceProvider.GetRequiredService<RomsContext>();
+            if (db.IsConfigured)
+            {
+                var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
 
-            var userAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.UserExpiration);
-            var ssAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration);
+                var userAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.UserExpiration);
+                var ssAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration);
 
-            scope.ServiceProvider.GetRequiredService<SaveService>().Cleanup(ssAge);
-            scope.ServiceProvider.GetRequiredService<UserService>().Cleanup(userAge);
+                scope.ServiceProvider.GetRequiredService<SaveService>().Cleanup(ssAge);
+                scope.ServiceProvider.GetRequiredService<UserService>().Cleanup(userAge);
+            }
         }
     }
 }

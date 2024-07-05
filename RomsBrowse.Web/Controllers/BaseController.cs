@@ -16,6 +16,7 @@ namespace RomsBrowse.Web.Controllers
     {
         private const string MessageCookieKey = "RedirectMessage";
         private static ITempEncryptionService? _encryptionService;
+        private static SetupService? _setupService;
         private UserViewModel? _currentUser;
 
         /// <summary>
@@ -65,40 +66,50 @@ namespace RomsBrowse.Web.Controllers
 
         public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
-            var user = await userService.Get(UserName!);
-            if (IsLoggedIn && (user == null || !user.CanSignIn))
+            if (_setupService == null)
             {
-                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                context.Result = new RedirectResult("/");
+                throw new InvalidOperationException("SetupService has not been set");
             }
-            ViewData["CurrentUrl"] = CurrentUrl;
-            ViewData["User"] = _currentUser = new UserViewModel(user);
-            ViewData["HasAdmin"] = await userService.HasAdmin();
-
-            if (_encryptionService != null && Request.Cookies.TryGetValue(MessageCookieKey, out var redirMessage))
+            if (!_setupService.IsConfigured)
             {
-                Response.Cookies.Delete(MessageCookieKey);
-                try
+                context.Result = _setupService.SetupRedirect;
+            }
+            else
+            {
+                var user = await userService.Get(UserName!);
+                if (IsLoggedIn && (user == null || !user.CanSignIn))
                 {
-                    var data = Encoding.UTF8.GetString(_encryptionService.Decrypt(Convert.FromBase64String(redirMessage))).FromJson<string[]>();
-                    if (data != null && data.Length == 2)
+                    await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                    context.Result = new RedirectResult("/");
+                }
+                ViewData["CurrentUrl"] = CurrentUrl;
+                ViewData["User"] = _currentUser = new UserViewModel(user);
+                ViewData["HasAdmin"] = await userService.HasAdmin();
+
+                if (_encryptionService != null && Request.Cookies.TryGetValue(MessageCookieKey, out var redirMessage))
+                {
+                    Response.Cookies.Delete(MessageCookieKey);
+                    try
                     {
-                        if (data[1] == bool.TrueString)
+                        var data = Encoding.UTF8.GetString(_encryptionService.Decrypt(Convert.FromBase64String(redirMessage))).FromJson<string[]>();
+                        if (data != null && data.Length == 2)
                         {
-                            SetSuccessMessage(data[0]);
-                        }
-                        else
-                        {
-                            SetErrorMessage(data[0]);
+                            if (data[1] == bool.TrueString)
+                            {
+                                SetSuccessMessage(data[0]);
+                            }
+                            else
+                            {
+                                SetErrorMessage(data[0]);
+                            }
                         }
                     }
-                }
-                catch
-                {
-                    //NOOP
+                    catch
+                    {
+                        //NOOP
+                    }
                 }
             }
-
             await base.OnActionExecutionAsync(context, next);
         }
 
@@ -125,9 +136,10 @@ namespace RomsBrowse.Web.Controllers
             base.OnActionExecuted(context);
         }
 
-        public static void SetEncryptionService(ITempEncryptionService encryptionService)
+        public static void SetStaticServices(ITempEncryptionService encryptionService, SetupService setupService)
         {
             _encryptionService = encryptionService;
+            _setupService = setupService;
         }
 
         /// <summary>
