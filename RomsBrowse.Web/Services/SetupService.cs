@@ -10,5 +10,10 @@ namespace RomsBrowse.Web.Services
         public bool IsConfigured => cstr.IsSet;
 
         public IActionResult SetupRedirect => new RedirectToActionResult("Index", "Init", null);
+
+        public void SetConnectionString(string connStr)
+        {
+            cstr.SetConnectionString(connStr);
+        }
     }
 }

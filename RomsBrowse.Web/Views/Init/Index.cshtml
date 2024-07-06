@@ -7,7 +7,7 @@
 <p>
     The SQL connection must be set before the application can be used.
 </p>
-<form method="post">
+<form method="post" id="frmInit">
     <div class="row">
         <div class="col-md-4">
             <label asp-for="ServerInstance">Server name and SQL instance</label>
@@ -126,5 +126,5 @@
         </div>
     </div>
 
-    <input type="submit" class="btn btn-primary" value="Set" />
+    <input type="button" class="btn btn-primary" value="Test" id="btnInitTest" />
 </form>

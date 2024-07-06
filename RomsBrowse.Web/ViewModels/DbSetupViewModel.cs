@@ -1,6 +1,8 @@
 ﻿using RomsBrowse.Common.Interfaces;
 using RomsBrowse.Common.Validation;
 using System.ComponentModel.DataAnnotations;
+using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using VE = RomsBrowse.Common.Validation.ValidationException;
 
 namespace RomsBrowse.Web.ViewModels
@@ -26,11 +28,36 @@ namespace RomsBrowse.Web.ViewModels
             ? string.Join('\\', Environment.UserDomainName, Environment.UserName)
             : Environment.UserName;
 
+        public string GetConnectionString()
+        {
+            Validate();
+            var builder = new DbConnectionStringBuilder
+            {
+                { "Server", ServerInstance },
+                { "Database", DatabaseName }
+            };
+
+            if (UseWindowsAuth)
+            {
+                builder.Add("Trusted_Connection", "True");
+            }
+            else
+            {
+                builder.Add($"User Id", Username!);
+                builder.Add($"Password", Password!);
+            }
+            builder.Add("Encrypt", Encrypt ? "True" : "False");
+
+            return builder.ToString();
+        }
+
         public void ClearSensitiveData()
         {
             Password = null;
         }
 
+#pragma warning disable CS8774
+        [MemberNotNull(nameof(DatabaseName), nameof(ServerInstance))]
         public void Validate()
         {
             ValidationTools.ValidatePublic(this);
@@ -50,5 +77,6 @@ namespace RomsBrowse.Web.ViewModels
                 throw new VE(nameof(Password), "If a username is specified, a password is required");
             }
         }
+#pragma warning restore CS8774
     }
 }
