@@ -17,24 +17,41 @@
 <form method="post" class="mb-3">
     <input type="hidden" name="Action" value="Rescan" />
     <p>
-        Perform a ROM rescan.
-        This checks for new, updated, and deleted files in the ROM directory.<br />
+        Perform a ROM rescan. This task is automatically run every hour,
+        but you can start it manually if you don't want to wait for new ROM files to be picked up.<br />
+        This task checks for new, updated, and deleted files in the ROM directory.<br />
         It also checks for changes in the platform config json and will act accordingly.
     </p>
-    <input type="submit" disabled="@Model.IsScanning" class="btn btn-warning" value="Perform rescan" />
+    <input type="submit" disabled="@Model.IsScanning" class="btn btn-primary" value="Perform rescan" />
 </form>
 
 <form method="post" class="mb-3">
     <input type="hidden" name="Action" value="Reset" />
     <p>
-        Perform a full ROM database reset.
+        Perform a full ROM data reset.
         This deletes all platforms, roms, and save states from the database.
-        ROM files will not be touched.<br />
+        ROM files will not be touched. Accounts will not be deleted<br />
         <b>
             You want to run this only if something is very screwed up.
             In general, performing a rescan (see above)
-            is sufficient to apply all changes from the ROM directory.
+            is sufficient to apply all changes from the ROM directory,
+            including a change of directory itself.
         </b>
     </p>
-    <input type="submit" disabled="@Model.IsScanning" class="btn btn-danger" value="Perform reset" />
+    <input type="submit" disabled="@Model.IsScanning" class="btn btn-danger" value="Perform data reset" />
+</form>
+
+<form method="post" class="mb-3">
+    <input type="hidden" name="Action" value="Init" />
+    <p>
+        Reset database connection settings.
+        This deletes the database connection settings,
+        returning the application into the unconfigured state.
+        The database itself will not be deleted,
+        and you have to do this manually if you want to remove it.<br />
+        <b>
+            You want to run this only if you change the database name or database server.
+        </b>
+    </p>
+    <input type="submit" disabled="@Model.IsScanning" class="btn btn-danger" value="Delete connection settings" />
 </form>

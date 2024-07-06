@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Common.Validation;
 using RomsBrowse.Data.Enums;
+using RomsBrowse.Data.Services;
 using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.Services;
@@ -16,12 +17,14 @@ namespace RomsBrowse.Web.Controllers
         private readonly UserService _userService;
         private readonly RomGatherService _rgs;
         private readonly SettingsService _ss;
+        private readonly ConnectionStringProvider _csp;
 
-        public AdminController(RomGatherService rgs, UserService userService, SettingsService ss) : base(userService)
+        public AdminController(RomGatherService rgs, UserService userService, SettingsService ss, ConnectionStringProvider csp) : base(userService)
         {
             _userService = userService;
             _rgs = rgs;
             _ss = ss;
+            _csp = csp;
         }
 
         [HttpGet]
@@ -32,14 +35,14 @@ namespace RomsBrowse.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AccountEdit(int id)
+        public IActionResult AccountEdit(int id)
         {
             if (CurrentUser!.Id == id)
             {
                 SetRedirectMessage("Cannot edit your own user this way", false);
                 return RedirectToAction(nameof(Accounts));
             }
-            var user = await _userService.Get(id);
+            var user = _userService.Get(id, false);
             if (user == null)
             {
                 return NotFound();
@@ -64,7 +67,7 @@ namespace RomsBrowse.Web.Controllers
                 SetRedirectMessage("Cannot edit your own user this way", false);
                 return RedirectToAction(nameof(AccountEdit), new { model.Id });
             }
-            var user = await _userService.Get(model.Id);
+            var user = _userService.Get(model.Id, true);
             if (user == null)
             {
                 return NotFound();
@@ -109,7 +112,7 @@ namespace RomsBrowse.Web.Controllers
                 SetErrorMessage(ex);
                 return View(nameof(AccountEdit), model);
             }
-            var user = await _userService.Get(model.Username);
+            var user = _userService.Get(model.Username, false);
             if (user != null)
             {
                 SetErrorMessage("A user with this name already exists");
@@ -206,6 +209,17 @@ namespace RomsBrowse.Web.Controllers
             }
             switch (model.Action)
             {
+                case "Init":
+                    if (!_rgs.IsScanning)
+                    {
+                        _csp.ResetConnectionString();
+                        SetSuccessMessage("Database connection settings have been deleted");
+                    }
+                    else
+                    {
+                        SetErrorMessage("A ROM scan is currently running, please try again later");
+                    }
+                    break;
                 case "Rescan":
                     if (!_rgs.IsScanning)
                     {

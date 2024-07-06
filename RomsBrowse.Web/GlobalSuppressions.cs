@@ -5,4 +5,4 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Style", "IDE0290:Use primary constructor", Justification = "Results in a warning", Scope = "member", Target = "~M:RomsBrowse.Web.Controllers.AccountController.#ctor(RomsBrowse.Web.Services.UserService)")]
+[assembly: SuppressMessage("Style", "IDE0290:Use primary constructor", Justification = "Results in a warning", Scope = "member", Target = "~M:RomsBrowse.Web.Controllers.AdminController.#ctor(RomsBrowse.Web.Services.RomGatherService,RomsBrowse.Web.Services.UserService,RomsBrowse.Web.Services.SettingsService,RomsBrowse.Data.Services.ConnectionStringProvider)")]

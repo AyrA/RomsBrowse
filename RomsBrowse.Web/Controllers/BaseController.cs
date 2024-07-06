@@ -76,7 +76,7 @@ namespace RomsBrowse.Web.Controllers
             }
             else
             {
-                var user = await userService.Get(UserName!);
+                var user = userService.Get(UserName!, false);
                 if (IsLoggedIn && (user == null || !user.CanSignIn))
                 {
                     await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

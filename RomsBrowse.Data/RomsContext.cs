@@ -8,7 +8,7 @@ using RomsBrowse.Data.Services;
 namespace RomsBrowse.Data
 {
     [AutoDIRegister(nameof(Register))]
-    public class RomsContext(DbContextOptions<RomsContext> opt, ConnectionStringProvider connStr) : DbContext(opt)
+    public class RomsContext(DbContextOptions<RomsContext> opt, ConnectionStringProvider connStr, MemoryCacheProvider memCache) : DbContext(opt)
     {
         public bool IsConfigured => connStr.IsSet;
 
@@ -45,6 +45,8 @@ namespace RomsBrowse.Data
                         sqlOpt.EnableRetryOnFailure();
                         sqlOpt.CommandTimeout(10);
                     });
+                    //Note: This caches queries, and not data
+                    dbOpt.UseMemoryCache(memCache.Cache);
 #if DEBUG
                     dbOpt.EnableSensitiveDataLogging(true);
                     dbOpt.EnableDetailedErrors(true);

@@ -34,12 +34,24 @@ namespace RomsBrowse.Web.Services
             if (db.IsConfigured)
             {
                 var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
+                var rgs = scope.ServiceProvider.GetRequiredService<RomGatherService>();
 
                 var userAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.UserExpiration);
                 var ssAge = ss.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration);
 
                 scope.ServiceProvider.GetRequiredService<SaveService>().Cleanup(ssAge);
                 scope.ServiceProvider.GetRequiredService<UserService>().Cleanup(userAge);
+                if (!rgs.IsScanning)
+                {
+                    try
+                    {
+                        rgs.Scan();
+                    }
+                    catch
+                    {
+                        //NOOP
+                    }
+                }
             }
         }
     }

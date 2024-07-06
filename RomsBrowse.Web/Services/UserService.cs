@@ -1,6 +1,7 @@
 ﻿using AyrA.AutoDI;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Enums;
@@ -8,11 +9,12 @@ using RomsBrowse.Data.Models;
 using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.ViewModels;
 using System.Security.Claims;
+using System.Text;
 
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class UserService(RomsContext ctx, IPasswordCheckerService passwordChecker, PasswordService passwordService, ILogger<UserService> logger)
+    public class UserService(RomsContext ctx, IMemoryCache cache, IPasswordCheckerService passwordChecker, PasswordService passwordService, ILogger<UserService> logger)
     {
         /// <summary>
         /// Cache value for the <see cref="HasAdmin"/> method
@@ -24,16 +26,45 @@ namespace RomsBrowse.Web.Services
             return !string.IsNullOrEmpty(username) && await ctx.Users.AnyAsync(m => m.Username == username);
         }
 
-        public async Task<User?> Get(string? username)
+        public User? Get(string? username, bool track)
         {
-            return string.IsNullOrEmpty(username)
-                ? null
-                : await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username);
+            if (string.IsNullOrEmpty(username))
+            {
+                return null;
+            }
+
+            var user = cache.GetOrCreate($"user:{username.ToLowerInvariant()}", (item) =>
+            {
+                var user = ctx.Users.AsNoTracking().FirstOrDefault(m => m.Username == username);
+                item.Size = GetSize(user);
+                if (user?.CanExpire ?? false)
+                {
+                    item.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+                }
+
+                return user;
+            });
+            if (track && user != null)
+            {
+                ctx.Users.Attach(user);
+            }
+            return user;
+
         }
 
-        public async Task<User?> Get(int userId)
+        public User? Get(int userId, bool track)
         {
-            return await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Id == userId);
+            var user = cache.GetOrCreate($"user:{userId}", (item) =>
+            {
+                var user = ctx.Users.AsNoTracking().FirstOrDefault(m => m.Id == userId);
+                item.Size = GetSize(user);
+                return user;
+            });
+            if (track && user != null)
+            {
+                ctx.Users.Attach(user);
+            }
+            return user;
         }
 
         public async Task<bool> Create(string username, string password)
@@ -122,8 +153,15 @@ namespace RomsBrowse.Web.Services
                 logger.LogInformation("Running user cleanup. Removing entries older than {Cutoff}", maxAge);
                 var cutoff = DateTime.UtcNow.Subtract(maxAge);
                 var total =
-                    ctx.SaveData.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(UserFlags.Admin) && !m.User.Flags.HasFlag(UserFlags.NoExpireUser)).ExecuteDelete() +
-                    ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(UserFlags.Admin) && !m.Flags.HasFlag(UserFlags.NoExpireUser)).ExecuteDelete();
+                    ctx.SaveData.Where(m => m.User.LastActivity < cutoff && !m.User.Flags.HasFlag(UserFlags.Admin) && !m.User.Flags.HasFlag(UserFlags.NoExpireUser)).ExecuteDelete();
+                var users = ctx.Users.Where(m => m.LastActivity < cutoff && !m.Flags.HasFlag(UserFlags.Admin) && !m.Flags.HasFlag(UserFlags.NoExpireUser)).ToList();
+                foreach (var user in users)
+                {
+                    ctx.Users.Remove(user);
+                    cache.Remove($"user:{user.Username}");
+                    cache.Remove($"user:{user.Id}");
+                    ++total;
+                }
                 if (total > 0)
                 {
                     hasAdmin = false;
@@ -152,7 +190,7 @@ namespace RomsBrowse.Web.Services
             ArgumentException.ThrowIfNullOrEmpty(username);
             ArgumentException.ThrowIfNullOrEmpty(password);
 
-            var user = ctx.Users.FirstOrDefault(m => m.Username == username);
+            var user = Get(username, true);
             if (user != null && user.CanSignIn)
             {
                 if (passwordService.CheckPassword(password, user.Hash, out var update))
@@ -185,14 +223,18 @@ namespace RomsBrowse.Web.Services
 
         public async Task<bool> Ping(string username)
         {
-            return 0 < await ctx.Users
-                .Where(m => m.Username == username)
-                .ExecuteUpdateAsync(m => m.SetProperty(p => p.LastActivity, DateTime.UtcNow));
+            var user = Get(username, true);
+            if (user != null)
+            {
+                user.LastActivity = DateTime.UtcNow;
+                return 0 < await ctx.SaveChangesAsync();
+            }
+            return false;
         }
 
         public async Task<bool> SetFlags(string username, UserFlags flags)
         {
-            var u = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var u = Get(username, true);
             if (u == null)
             {
                 return false;
@@ -212,7 +254,7 @@ namespace RomsBrowse.Web.Services
 
         public async Task<bool> AddFlag(string username, UserFlags flags)
         {
-            var u = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var u = Get(username, true);
             if (u == null)
             {
                 return false;
@@ -228,7 +270,7 @@ namespace RomsBrowse.Web.Services
 
         public async Task<bool> RemoveFlag(string username, UserFlags flags)
         {
-            var u = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username);
+            var u = Get(username, true);
             if (u == null)
             {
                 return false;
@@ -244,7 +286,7 @@ namespace RomsBrowse.Web.Services
 
         public async Task ChangePassword(string username, string oldPassword, string newPassword)
         {
-            var user = await ctx.Users.FirstOrDefaultAsync(m => m.Username == username)
+            var user = Get(username, true)
                 ?? throw new Exception("User does not exist");
 
             passwordChecker.EnsureSafePassword(newPassword);
@@ -284,7 +326,11 @@ namespace RomsBrowse.Web.Services
         public async Task SaveChanges(User user)
         {
             user.Validate();
-            ctx.Users.Update(user);
+            if (!ctx.ChangeTracker.Entries<User>().Any(m => m.Entity == user))
+            {
+                logger.LogWarning("User #{Id} was not tracked when call to SaveChanges was made", user.Id);
+                ctx.Users.Update(user);
+            }
             await ctx.SaveChangesAsync();
         }
 
@@ -314,6 +360,8 @@ namespace RomsBrowse.Web.Services
             }
             ctx.SaveData.RemoveRange(user.SaveData);
             ctx.Users.Remove(user);
+            cache.Remove($"user:{user.Username.ToLowerInvariant()}");
+            cache.Remove($"user:{user.Id}");
             await ctx.SaveChangesAsync();
         }
 
@@ -328,7 +376,7 @@ namespace RomsBrowse.Web.Services
                 throw new InvalidOperationException("Cannot lock admins. Remove the admin flag first");
             }
             user.IsLocked = !user.IsLocked;
-            await ctx.SaveChangesAsync();
+            await SaveChanges(user);
         }
 
         private async Task ChangeAdmin(User? user)
@@ -349,7 +397,32 @@ namespace RomsBrowse.Web.Services
             {
                 user.IsLocked = false;
             }
-            await ctx.SaveChangesAsync();
+            await SaveChanges(user);
+        }
+
+        /// <summary>
+        /// Gets the approximate memory size of a user entry
+        /// </summary>
+        /// <param name="user">User entry</param>
+        /// <returns>Size. 0 if null</returns>
+        /// <remarks>
+        /// This is not necessarily accurate,
+        /// and is only relevant for purging entries
+        /// </remarks>
+        private static long GetSize(User? user)
+        {
+            if (user == null)
+            {
+                return 0;
+            }
+            return
+                64 //Base size overhead estimate
+                + Encoding.UTF8.GetByteCount(user.Username)
+                + Encoding.UTF8.GetByteCount(user.Hash)
+                + sizeof(UserFlags)
+                + sizeof(long) + sizeof(DateTimeKind) //Expiration
+                + sizeof(int) // Id
+                ;
         }
     }
 }
