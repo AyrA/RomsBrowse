@@ -37,27 +37,65 @@ namespace RomsBrowse.Web.ViewModels
             ? string.Join('\\', Environment.UserDomainName, Environment.UserName)
             : Environment.UserName;
 
+        public string ProviderString
+        {
+            get
+            {
+                return Provider switch
+                {
+                    DbProvider.SQLite => "sqlite",
+                    DbProvider.SQLServer => "mssql",
+                    _ => throw new NotImplementedException($"Unknown provider type: {Provider}"),
+                };
+            }
+            set
+            {
+                Provider = value switch
+                {
+                    "mssql" => DbProvider.SQLServer,
+                    "sqlite" => DbProvider.SQLite,
+                    _ => throw new ArgumentException($"Invalid provider value: {value}", nameof(value)),
+                };
+            }
+        }
+
         public string GetConnectionString()
         {
             Validate();
-            var builder = new DbConnectionStringBuilder
-            {
-                { "Server", ServerInstance },
-                { "Database", DatabaseName }
-            };
 
-            if (UseWindowsAuth)
+            if (Provider == DbProvider.SQLite)
             {
-                builder.Add("Trusted_Connection", "True");
+                var builder = new DbConnectionStringBuilder()
+                {
+                    { "Data Source", ServerInstance }
+                };
+                return builder.ToString();
+            }
+            else if (Provider == DbProvider.SQLServer)
+            {
+                var builder = new DbConnectionStringBuilder
+                {
+                    { "Server", ServerInstance },
+                    { "Database", DatabaseName }
+                };
+
+                if (UseWindowsAuth)
+                {
+                    builder.Add("Trusted_Connection", "True");
+                }
+                else
+                {
+                    builder.Add($"User Id", Username!);
+                    builder.Add($"Password", Password!);
+                }
+                builder.Add("Encrypt", Encrypt ? "True" : "False");
+
+                return builder.ToString();
             }
             else
             {
-                builder.Add($"User Id", Username!);
-                builder.Add($"Password", Password!);
+                throw new NotImplementedException($"Unknown provider: {Provider}");
             }
-            builder.Add("Encrypt", Encrypt ? "True" : "False");
-
-            return builder.ToString();
         }
 
         public void ClearSensitiveData()

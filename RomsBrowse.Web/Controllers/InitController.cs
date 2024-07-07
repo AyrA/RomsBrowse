@@ -34,7 +34,7 @@ namespace RomsBrowse.Web.Controllers
             try
             {
                 model.Validate();
-                ss.SetConnectionString(model.GetConnectionString(), model.Provider);
+                ss.SetConnectionString(model.GetConnectionString(), model.ProviderString);
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
