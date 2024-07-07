@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RomsBrowse.Data;
 
 #nullable disable
 
-namespace RomsBrowse.Data.Migrations
+namespace RomsBrowse.Data.Migrations.SqlServer
 {
     [DbContext(typeof(SqlServerContext))]
-    partial class RomsContextModelSnapshot : ModelSnapshot
+    [Migration("20240707105635_AddedSqlite")]
+    partial class AddedSqlite
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -112,6 +115,9 @@ namespace RomsBrowse.Data.Migrations
                     b.Property<int>("RomFileId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Flags")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
@@ -120,15 +126,12 @@ namespace RomsBrowse.Data.Migrations
                         .HasMaxLength(1048576)
                         .HasColumnType("varbinary(max)");
 
-                    b.Property<int>("Flags")
-                        .HasColumnType("int");
-
                     b.Property<byte[]>("Image")
                         .IsRequired()
                         .HasMaxLength(1048576)
                         .HasColumnType("varbinary(max)");
 
-                    b.HasKey("UserId", "RomFileId");
+                    b.HasKey("UserId", "RomFileId", "Flags");
 
                     b.HasIndex("Created");
 

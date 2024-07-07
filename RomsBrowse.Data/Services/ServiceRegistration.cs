@@ -1,5 +1,6 @@
 ﻿using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace RomsBrowse.Data.Services
@@ -10,6 +11,18 @@ namespace RomsBrowse.Data.Services
         public static void Register(IServiceCollection services)
         {
             services.AddScoped(GetContext);
+            if (EF.IsDesignTime)
+            {
+                var configType = services.FirstOrDefault(m => m.ServiceType == typeof(IConfiguration))
+                ?? throw new InvalidOperationException("Cannot register Database context without IConfiguration");
+                IConfiguration config = (IConfiguration?)configType.ImplementationInstance
+                    ?? (IConfiguration?)configType.ImplementationFactory?.Invoke(null!)
+                    ?? throw new InvalidOperationException("IConfiguration instance is not set");
+
+                //Add hardcoded services that are "good enough" for design time purposes
+                services.AddDbContext<SqlServerContext>(opt => opt.UseSqlServer(config.GetConnectionString(nameof(SqlServerContext))));
+                services.AddDbContext<SQLiteContext>(opt => opt.UseSqlite(config.GetConnectionString(nameof(SQLiteContext))));
+            }
         }
 
         private static ApplicationContext GetContext(IServiceProvider provider)

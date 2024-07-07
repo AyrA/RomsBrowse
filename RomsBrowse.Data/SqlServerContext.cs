@@ -37,10 +37,7 @@ namespace RomsBrowse.Data
 #endif
                 }
             }
-            else
-            {
-                base.OnConfiguring(dbOpt);
-            }
+            base.OnConfiguring(dbOpt);
         }
 
         public static void Register(IServiceCollection services)

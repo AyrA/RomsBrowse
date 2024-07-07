@@ -138,7 +138,8 @@ namespace RomsBrowse.Web.ViewModels
         /// <param name="dataDirectory">Data directory</param>
         /// <remarks>
         /// Internally calls <see cref="Validate"/><br />
-        /// Will do nothing if <see cref="Provider" /> is not set to use SQLite
+        /// Will do nothing if <see cref="Provider" /> is not set to use SQLite.
+        /// This will set the full path in <see cref="FileName"/>
         /// </remarks>
         public void VerifySqliteFileName(string dataDirectory)
         {
@@ -187,6 +188,7 @@ namespace RomsBrowse.Web.ViewModels
                 {
                     throw new VE(nameof(FileName), $"Able to create file '{p}' but cannot delete it anymore.", ex);
                 }
+                FileName = p;
                 GetConnectionString(false);
             }
             catch (VE)

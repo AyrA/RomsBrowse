@@ -26,18 +26,21 @@ namespace RomsBrowse.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder dbOpt)
         {
-            dbOpt.UseSqlite(settings.GetSettings().ConnectionString, sqlOpt =>
+            if (!dbOpt.IsConfigured)
             {
-                sqlOpt.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
-                sqlOpt.MigrationsAssembly(typeof(SQLiteContext).Assembly.GetName().Name);
-                sqlOpt.CommandTimeout(10);
-            });
-            //Note: This caches queries, and not data
-            dbOpt.UseMemoryCache(_memCache.Cache);
+                dbOpt.UseSqlite(settings.GetSettings().ConnectionString, sqlOpt =>
+                {
+                    sqlOpt.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
+                    sqlOpt.MigrationsAssembly(typeof(SQLiteContext).Assembly.GetName().Name);
+                    sqlOpt.CommandTimeout(10);
+                });
+                //Note: This caches queries, and not data
+                dbOpt.UseMemoryCache(_memCache.Cache);
 #if DEBUG
-            dbOpt.EnableSensitiveDataLogging(true);
-            dbOpt.EnableDetailedErrors(true);
+                dbOpt.EnableSensitiveDataLogging(true);
+                dbOpt.EnableDetailedErrors(true);
 #endif
+            }
             base.OnConfiguring(dbOpt);
         }
     }
