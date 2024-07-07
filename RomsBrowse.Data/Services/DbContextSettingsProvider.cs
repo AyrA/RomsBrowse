@@ -14,6 +14,9 @@ namespace RomsBrowse.Data.Services
         private readonly IPermEncryptionService _encService;
         private SettingsContents? settings;
 
+        public string DataDirectry => Path.GetDirectoryName(connStrFile)
+            ?? throw new InvalidOperationException("Connection string file has not been set up properly");
+
         public bool IsConnectionStringSet => File.Exists(connStrFile);
 
         public DbContextSettingsProvider(IPermEncryptionService encryptionService)

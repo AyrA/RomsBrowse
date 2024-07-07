@@ -7,6 +7,32 @@ namespace RomsBrowse.Common.Validation
 {
     public static class ValidationTools
     {
+        private const BindingFlags AllFields = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public | BindingFlags.Static;
+
+        public static void ValidateFields(object owner, params string[] fieldNames)
+        {
+            var t = owner.GetType();
+            var publicProps = t.GetProperties(AllFields);
+            var publicFields = t.GetFields(AllFields);
+
+            foreach (var name in fieldNames)
+            {
+                var prop = publicProps.FirstOrDefault(m => m.Name == name);
+                var field = publicFields.FirstOrDefault(m => m.Name == name);
+                if (prop != null)
+                {
+                    ValidateField(prop, owner);
+                    return;
+                }
+                if (field != null)
+                {
+                    ValidateField(field, owner);
+                    return;
+                }
+                throw new ArgumentException($"Property or field not found: {name}", nameof(fieldNames));
+            }
+        }
+
         public static void ValidateField(PropertyInfo prop, object owner)
         {
             Validate(prop.GetValue(owner), prop.GetCustomAttributes(), prop.Name);

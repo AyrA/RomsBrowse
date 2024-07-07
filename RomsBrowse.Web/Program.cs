@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 using AyrA.AutoDI;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
@@ -100,24 +99,15 @@ app.UseAuthorization();
 SetThreadLanguage("de-ch");
 if (IsDbConfigured())
 {
-    await MigrateAsync();
-    await InitDataFields();
-    await InitDefaultSettings();
-}
-else
-{
-    InitUnconfigured();
+    using var scope = app.Services.CreateScope();
+    var ss = scope.ServiceProvider.GetRequiredService<SetupService>();
+    await ss.FullInit();
 }
 InitDefaultControllerParams();
 
 await app.RunAsync();
 
 // Helper
-
-void InitUnconfigured()
-{
-    //TODO
-}
 
 void InitDefaultControllerParams()
 {
@@ -126,70 +116,6 @@ void InitDefaultControllerParams()
     BaseController.SetStaticServices(enc, ss);
 }
 
-async Task InitDataFields()
-{
-    using var scope = app.Services.CreateScope();
-    var menuService = app.Services.GetRequiredService<MainMenuService>();
-    var platformService = scope.ServiceProvider.GetRequiredService<PlatformService>();
-    var counts = await platformService.GetAllRomCount();
-    menuService.SetMenuItems(await platformService.GetPlatforms(false), counts);
-}
-
-async Task InitDefaultSettings()
-{
-    using var scope = app.Services.CreateScope();
-    var user = scope.ServiceProvider.GetRequiredService<UserService>();
-    var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
-
-    //If no admin exists, change admin token on every start
-    //Delete token if admin user exists
-    if (!await user.HasAdmin())
-    {
-        ss[SettingsService.KnownSettings.AdminToken] = Guid.NewGuid()
-            .ToString()
-            .ToUpperInvariant();
-    }
-    else
-    {
-        ss.Delete(SettingsService.KnownSettings.AdminToken);
-    }
-    ss.AddDefault(SettingsService.KnownSettings.AllowRegister, false);
-    ss.AddDefault(SettingsService.KnownSettings.AnonymousPlay, false);
-    ss.AddDefault(SettingsService.KnownSettings.MaxSaveStatesPerUser, 10);
-    ss.AddDefault(SettingsService.KnownSettings.SaveStateExpiration, TimeSpan.FromDays(30));
-    ss.AddDefault(SettingsService.KnownSettings.UserExpiration, TimeSpan.FromDays(30));
-}
-
-async Task MigrateAsync()
-{
-    using var scope = app.Services.CreateScope();
-    var migLog = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var ctx = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-    var pending = (await ctx.Database.GetPendingMigrationsAsync()).ToList();
-    using var logScope = migLog.BeginScope(ctx);
-    if (pending.Count > 0)
-    {
-        migLog.LogInformation("Applying all pending migrations:");
-        foreach (var mig in pending)
-        {
-            migLog.LogInformation("Pending: {Migration}", mig);
-        }
-        try
-        {
-            await ctx.Database.MigrateAsync();
-        }
-        catch (Exception ex)
-        {
-            migLog.LogCritical(ex, "Failed to apply migrations");
-            throw;
-        }
-        migLog.LogInformation("Done!");
-    }
-    else
-    {
-        migLog.LogInformation("Database has no pending changes to be applied");
-    }
-}
 
 bool IsDbConfigured()
 {

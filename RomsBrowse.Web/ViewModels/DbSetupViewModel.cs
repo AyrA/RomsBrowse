@@ -2,7 +2,6 @@
 using RomsBrowse.Common.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
 using VE = RomsBrowse.Common.Validation.ValidationException;
 
 namespace RomsBrowse.Web.ViewModels
@@ -10,8 +9,8 @@ namespace RomsBrowse.Web.ViewModels
     public enum DbProvider
     {
         None = 0,
-        SQLite = 1,
-        SQLServer = 2
+        SQLServer = 1,
+        SQLite = 2
     }
 
     public class DbSetupViewModel : IValidateable, ISensitiveData
@@ -22,6 +21,10 @@ namespace RomsBrowse.Web.ViewModels
         [Required]
         public string? ServerInstance { get; set; }
 
+        [Required]
+        public string? FileName { get; set; }
+
+        [Required]
         public string? DatabaseName { get; set; }
 
         public string? Username { get; set; }
@@ -59,15 +62,155 @@ namespace RomsBrowse.Web.ViewModels
             }
         }
 
-        public string GetConnectionString()
+        public string? DefaultDirectory { get; set; }
+
+        public string GetConnectionString() => GetConnectionString(true);
+
+        public void ClearSensitiveData()
         {
+            Password = null;
+        }
+
+        public void Validate()
+        {
+            if (Provider == DbProvider.SQLite)
+            {
+                ValidationTools.ValidateFields(this, nameof(FileName));
+                try
+                {
+                    if (string.IsNullOrEmpty(FileName))
+                    {
+                        throw new Exception("Provider cannot be used without a file name");
+                    }
+                }
+                catch (VE)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    throw new VE(nameof(FileName), $"'{FileName}' is not a valid database file name", ex);
+                }
+            }
+            else if (Provider == DbProvider.SQLServer)
+            {
+                ValidationTools.ValidateFields(this, nameof(ServerInstance), nameof(DatabaseName));
+                if (string.IsNullOrWhiteSpace(DatabaseName))
+                {
+                    throw new VE(nameof(DatabaseName), "Database name must be set");
+                }
+                if (UseWindowsAuth)
+                {
+                    if (!string.IsNullOrWhiteSpace(Username))
+                    {
+                        throw new VE(nameof(Username), "Cannot use windows authentication and use a username at the same time");
+                    }
+                }
+                else if (string.IsNullOrWhiteSpace(Username))
+                {
+                    throw new VE(nameof(Username), "Username is required if windows authentication is disabled");
+                }
+                else if (string.IsNullOrWhiteSpace(Password))
+                {
+                    throw new VE(nameof(Password), "If a username is specified, a password is required");
+                }
+                try
+                {
+                    GetConnectionString(false);
+                }
+                catch (Exception ex)
+                {
+                    throw new VE("Multiple", "Unable to construct connection string. Some value may need escaping or is invalid for an SQL server", ex);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException($"Provider not implemented: {Provider}");
+            }
+        }
+
+        /// <summary>
+        /// Verifies that the file name is valid,
+        /// and the file can be created,
+        /// written to,
+        /// and deleted.
+        /// </summary>
+        /// <param name="dataDirectory">Data directory</param>
+        /// <remarks>
+        /// Internally calls <see cref="Validate"/><br />
+        /// Will do nothing if <see cref="Provider" /> is not set to use SQLite
+        /// </remarks>
+        public void VerifySqliteFileName(string dataDirectory)
+        {
+            if (Provider != DbProvider.SQLite)
+            {
+                return;
+            }
+
             Validate();
+            try
+            {
+                var p = Path.Combine(dataDirectory, FileName!);
+                if (string.IsNullOrEmpty(p))
+                {
+                    throw new IOException("Failed to combine path strings");
+                }
+                if (File.Exists(p))
+                {
+                    throw new Exception($"A file named '{p}' already exists");
+                }
+                //Ensure we can create the file
+                try
+                {
+                    File.Create(p).Dispose();
+                }
+                catch (Exception ex)
+                {
+                    throw new VE(nameof(FileName), $"Unable to create file '{p}'.", ex);
+                }
+                //Ensure we can write to the file
+                try
+                {
+                    using var f = File.OpenWrite(p);
+                    var bytes = Enumerable.Range(0, 512).Select(m => (byte)m).ToArray();
+                    f.Write(bytes, 0, 0);
+                }
+                catch (Exception ex)
+                {
+                    throw new VE(nameof(FileName), $"Able to create file '{p}' but cannot write to it later anymore.", ex);
+                }
+                try
+                {
+                    File.Delete(p);
+                }
+                catch (Exception ex)
+                {
+                    throw new VE(nameof(FileName), $"Able to create file '{p}' but cannot delete it anymore.", ex);
+                }
+                GetConnectionString(false);
+            }
+            catch (VE)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new VE(nameof(FileName), $"'{FileName}' is not a valid database file name", ex);
+            }
+        }
+
+        private string GetConnectionString(bool validate)
+        {
+            if (validate)
+            {
+                Validate();
+            }
 
             if (Provider == DbProvider.SQLite)
             {
                 var builder = new DbConnectionStringBuilder()
                 {
-                    { "Data Source", ServerInstance }
+                    { "Data Source", FileName! }
                 };
                 return builder.ToString();
             }
@@ -75,8 +218,8 @@ namespace RomsBrowse.Web.ViewModels
             {
                 var builder = new DbConnectionStringBuilder
                 {
-                    { "Server", ServerInstance },
-                    { "Database", DatabaseName }
+                    { "Server", ServerInstance! },
+                    { "Database", DatabaseName! }
                 };
 
                 if (UseWindowsAuth)
@@ -97,99 +240,5 @@ namespace RomsBrowse.Web.ViewModels
                 throw new NotImplementedException($"Unknown provider: {Provider}");
             }
         }
-
-        public void ClearSensitiveData()
-        {
-            Password = null;
-        }
-
-#pragma warning disable CS8774
-        [MemberNotNull(nameof(DatabaseName), nameof(ServerInstance), nameof(Provider))]
-        public void Validate()
-        {
-            ValidationTools.ValidatePublic(this);
-            if (Provider == DbProvider.SQLite)
-            {
-                try
-                {
-                    if (string.IsNullOrEmpty(ServerInstance))
-                    {
-                        throw new Exception("Provider cannot be used without a file name");
-                    }
-                    var p = Path.Combine(AppContext.BaseDirectory, ServerInstance);
-                    if (string.IsNullOrEmpty(p))
-                    {
-                        throw new IOException("Failed to combine path strings");
-                    }
-                    if (File.Exists(p))
-                    {
-                        throw new Exception($"A file named '{p}' already exists");
-                    }
-                    //Ensure we can create the file
-                    try
-                    {
-                        File.Create(p).Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new VE(nameof(ServerInstance), $"Unable to create file '{p}'.", ex);
-                    }
-                    //Ensure we can write to the file
-                    try
-                    {
-                        using var f = File.OpenWrite(p);
-                        var bytes = Enumerable.Range(0, 512).Select(m => (byte)m).ToArray();
-                        f.Write(bytes, 0, 0);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new VE(nameof(ServerInstance), $"Able to create file '{p}' but cannot write to it later anymore.", ex);
-                    }
-                    try
-                    {
-                        File.Delete(p);
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new VE(nameof(ServerInstance), $"Able to create file '{p}' but cannot delete it anymore.", ex);
-                    }
-                }
-                catch (VE)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    throw new VE(nameof(ServerInstance), $"'{ServerInstance}' is not a valid database file name", ex);
-                }
-            }
-            else if (Provider == DbProvider.SQLServer)
-            {
-                if (string.IsNullOrWhiteSpace(DatabaseName))
-                {
-                    throw new VE(nameof(DatabaseName), "Database name must be set");
-                }
-                if (UseWindowsAuth)
-                {
-                    if (!string.IsNullOrWhiteSpace(Username))
-                    {
-                        throw new VE(nameof(Username), "Cannot use windows authentication and use a username at the same time");
-                    }
-                }
-                else if (string.IsNullOrWhiteSpace(Username))
-                {
-                    throw new VE(nameof(Username), "Username is required if windows authentication is disabled");
-                }
-                else if (string.IsNullOrWhiteSpace(Password))
-                {
-                    throw new VE(nameof(Password), "If a username is specified, a password is required");
-                }
-            }
-            else
-            {
-                throw new NotImplementedException($"Provider not implemented: {Provider}");
-            }
-        }
-#pragma warning restore CS8774
     }
 }

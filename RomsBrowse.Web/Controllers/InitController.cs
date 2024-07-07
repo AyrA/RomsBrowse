@@ -18,14 +18,20 @@ namespace RomsBrowse.Web.Controllers
             }
             var vm = new DbSetupViewModel()
             {
+                DefaultDirectory = ss.DataDirectory,
+                Provider = DbProvider.None,
+                //Prefill defaults
                 UseWindowsAuth = true,
-                Encrypt = false
+                Encrypt = false,
+                FileName = "roms.db3",
+                ServerInstance = @".\SQLEXPRESS",
+                DatabaseName = "roms"
             };
             return View(vm);
         }
 
         [HttpPost]
-        public IActionResult Index(DbSetupViewModel model)
+        public async Task<IActionResult> Index(DbSetupViewModel model)
         {
             if (ss.IsConfigured)
             {
@@ -34,7 +40,9 @@ namespace RomsBrowse.Web.Controllers
             try
             {
                 model.Validate();
+                model.VerifySqliteFileName(ss.DataDirectory);
                 ss.SetConnectionString(model.GetConnectionString(), model.ProviderString);
+                await ss.FullInit();
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -50,19 +58,28 @@ namespace RomsBrowse.Web.Controllers
             try
             {
                 model.Validate();
+                model.VerifySqliteFileName(ss.DataDirectory);
             }
             catch (Exception ex)
             {
                 return Json(new ApiResult(false, GetErrorString(ex)));
             }
-            ctx.ConnectionString = model.GetConnectionString();
-            try
+            if (model.Provider == DbProvider.SQLServer)
             {
-                ctx.TestConnection();
+                ctx.ConnectionString = model.GetConnectionString();
+                try
+                {
+                    ctx.TestConnection();
+                }
+                catch (Exception ex)
+                {
+                    return Json(new ApiResult(false, GetErrorString(ex)));
+                }
             }
-            catch (Exception ex)
+            else if (model.Provider == DbProvider.SQLite)
             {
-                return Json(new ApiResult(false, GetErrorString(ex)));
+                //NOOP. Model already checked file,
+                //and this is enough for SQLite
             }
             return Json(new ApiResult(true, null));
         }

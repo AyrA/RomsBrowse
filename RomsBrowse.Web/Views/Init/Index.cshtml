@@ -5,168 +5,207 @@
 }
 <h1>@ViewData["Title"]</h1>
 <p>
-    The SQL connection must be set before the application can be used.
+    The SQL connection must be configured before the application can be used.
 </p>
-<form method="post" id="frmInit">
-    <div class="row">
-        <div class="col-md-4">
-            <label>
-                <input type="radio" name="@Html.NameFor(m => m.Provider)" value="1" checked="@(Model.Provider == DbProvider.SQLServer)" />
-                MS SQL Server or SQL Server Express
-            </label><br />
-            <label>
-                <input type="radio" name="@Html.NameFor(m => m.Provider)" value="2" checked="@(Model.Provider == DbProvider.SQLite)" />
-                SQLite
-            </label><br />
-        </div>
+<div class="row mb-1">
+    <div class="col-md-4">
+        <label>
+            <input type="radio" id="showsec1" name="@Html.NameFor(m => m.Provider)" value="1" checked="@(Model.Provider == DbProvider.SQLServer)" />
+            MS SQL Server or SQL Server Express
+        </label><br />
+        <label>
+            <input type="radio" id="showsec2" name="@Html.NameFor(m => m.Provider)" value="2" checked="@(Model.Provider == DbProvider.SQLite)" />
+            SQLite
+        </label><br />
     </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    The SQL system decides how data is stored in this application.
-                    Currently, two systems are offered:
-                </i>
-            </p>
-            <p>
-                <i>
-                    <b>MS SQL Server</b>:
-                    This is recommended for internet facing applications
-                    that may experience more than just light traffic.
-                    However, SQL Server requires manual installation
-                    and may be overkill for small applications.
-                </i>
-            </p>
-            <p>
-                <i>
-                    <b>SQLite</b>:
-                    SQLite is ideal for small installations
-                    where only a few users are simultaneously using it.
-                    It is purely file based, and requires no installation,
-                    but performance may be degraded if you experience
-                    higher than usual number of concurrent users.
-                </i>
-            </p>
-        </div>
+</div>
+<div class="row mb-1">
+    <div class="col-md-6">
+        <p>
+            <i>
+                The SQL system decides how data is stored in this application.
+                Currently, two systems are offered:
+            </i>
+        </p>
+        <p>
+            <i>
+                <b>MS SQL Server</b>:
+                This is recommended for internet facing applications
+                that may experience more than just light traffic.
+                However, SQL Server requires manual installation
+                and may be overkill for small applications.
+            </i>
+        </p>
+        <p>
+            <i>
+                <b>SQLite</b>:
+                SQLite is ideal for small or personal installations
+                where only a few users are simultaneously using it.
+                It is purely file based, and requires no installation,
+                but performance may be degraded if you experience
+                higher than usual number of concurrent users.
+            </i>
+        </p>
     </div>
+</div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label asp-for="ServerInstance">Server name and SQL instance</label>
-            <input asp-for="ServerInstance" class="form-control" required placeholder="Server and instance name" />
+<section id="sec1" class="d-none">
+    <h1>SQL Server configuration</h1>
+    <form method="post" id="frmInitSql">
+        <input type="hidden" name="@Html.NameFor(m => m.Provider)" value="1" />
+        <div class="row">
+            <div class="col-md-4">
+                <label asp-for="ServerInstance">Server name and SQL instance</label>
+                <input asp-for="ServerInstance" class="form-control" required placeholder="Server and instance name" />
+            </div>
         </div>
-    </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    This is the server name and optional SQL instance name to connect to.<br />
-                    Either enter <code>HOSTNAME</code> or <code>HOSTNAME\INSTANCE</code>
-                    depending on your setup. For SQL server express with default settings
-                    on the same server as this application, enter <code>.\SQLEXPRESS</code><br />
-                    Without an instance name, the SQL server instance marked as default will be used.
-                </i>
-            </p>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        This is the server name and optional SQL instance name to connect to.<br />
+                        Either enter <code>HOSTNAME</code> or <code>HOSTNAME\INSTANCE</code>
+                        depending on your setup. For SQL server express with default settings
+                        on the same server as this application, enter <code>.\SQLEXPRESS</code><br />
+                        Without an instance name, the SQL server instance marked as default will be used.
+                    </i>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label asp-for="DatabaseName">Database name</label>
-            <input asp-for="DatabaseName" class="form-control" required placeholder="Database name" />
+        <div class="row">
+            <div class="col-md-4">
+                <label asp-for="DatabaseName">Database name</label>
+                <input asp-for="DatabaseName" class="form-control" required placeholder="Database name" />
+            </div>
         </div>
-    </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    This is the name of the database.
-                    If it doesn't exists, it will be created,
-                    which requires additional permissions.
-                </i>
-            </p>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        This is the name of the database.
+                        If it doesn't exists, it will be created,
+                        which requires additional permissions.
+                    </i>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label>
-                <input asp-for="UseWindowsAuth" />
-                Use Windows authentication (recommended)
-            </label>
+        <div class="row">
+            <div class="col-md-4">
+                <label>
+                    <input asp-for="UseWindowsAuth" />
+                    Use Windows authentication (recommended)
+                </label>
+            </div>
         </div>
-    </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    Windows authentication is a way to log into services with
-                    the current Windows account credentials.
-                    This is the recommended way of communicating
-                    between this application and the SQL server.
-                    It will not work if either the SQL server
-                    or this application is not run on Windows.<br />
-                    The current Windows user is <code>@Model.CurrentUser</code>
-                </i>
-            </p>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        Windows authentication is a way to log into services with
+                        the current Windows account credentials.
+                        This is the recommended way of communicating
+                        between this application and the SQL server.
+                        It will not work if either the SQL server
+                        or this application is not run on Windows.<br />
+                        The current Windows user is <code>@Model.CurrentUser</code>
+                    </i>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label asp-for="Username">Username</label>
-            <input asp-for="Username" class="form-control" placeholder="SQL user name" />
+        <div class="row">
+            <div class="col-md-4">
+                <label asp-for="Username">Username</label>
+                <input asp-for="Username" class="form-control" placeholder="SQL user name" />
+            </div>
         </div>
-    </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    If you cannot use windows authentication,
-                    specify the name of the SQL user to authenticate with
-                </i>
-            </p>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        If you cannot use windows authentication,
+                        specify the name of the SQL user to authenticate with
+                    </i>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label asp-for="Password">Password</label>
-            <input type="password" asp-for="Password" class="form-control" placeholder="SQL user password" />
+        <div class="row">
+            <div class="col-md-4">
+                <label asp-for="Password">Password</label>
+                <input type="password" asp-for="Password" class="form-control" placeholder="SQL user password" />
+            </div>
         </div>
-    </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    If you cannot use windows authentication,
-                    specify the password of the SQL user to authenticate with
-                </i>
-            </p>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        If you cannot use windows authentication,
+                        specify the password of the SQL user to authenticate with
+                    </i>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <div class="row">
-        <div class="col-md-4">
-            <label>
-                <input asp-for="Encrypt" />
-                Encrypt SQL connection
-            </label>
+        <div class="row">
+            <div class="col-md-4">
+                <label>
+                    <input asp-for="Encrypt" />
+                    Encrypt SQL connection
+                </label>
+            </div>
         </div>
-    </div>
-    <div class="row mb-1">
-        <div class="col-md-6">
-            <p>
-                <i>
-                    Encryption will protect
-                    data between this application and the SQL server.
-                    You want to enable this if the server doesn't runs
-                    on the same machine as this application.<br />
-                    Note: This requires your server to have a certificate trusted by this machine.
-                </i>
-            </p>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        Encryption will protect
+                        data between this application and the SQL server.
+                        You want to enable this if the server doesn't runs
+                        on the same machine as this application.<br />
+                        Note: This requires your server to have a certificate trusted by this machine.
+                    </i>
+                </p>
+            </div>
         </div>
-    </div>
 
-    <input type="button" class="btn btn-primary" value="Test" id="btnInitTest" />
-</form>
+        <input type="button" class="btn btn-primary" value="Test" id="btnInitTest1" />
+    </form>
+</section>
+
+<section id="sec2" class="d-none">
+    <h1>SQLite configuration</h1>
+    <form method="post" id="frmInitSqlite">
+        <input type="hidden" name="@Html.NameFor(m => m.Provider)" value="2" />
+        <div class="row">
+            <div class="col-md-4">
+                <label asp-for="FileName">Database file name</label>
+                <input asp-for="FileName" class="form-control" required placeholder="Database file name" />
+            </div>
+        </div>
+        <div class="row mb-1">
+            <div class="col-md-6">
+                <p>
+                    <i>
+                        This is the name of the database file.
+                        You can either enter a file name
+                        to store the file at <code>@Model.DefaultDirectory</code>,
+                        or specify a full path to store the file in a given location.<br />
+                        The user <code>@Model.CurrentUser</code>
+                        must have read, write, and delete permissions for the given location,
+                        and the file must not exist yet.<br />
+                        It's highly recommended to store the database on an SSD based drive
+                        to get the best performance.<br />
+                    </i>
+                    <b>
+                        Do not store the file inside of the RomsBrowse application directory
+                        to avoid accidentally deleting it when upgrading.
+                    </b>
+                </p>
+            </div>
+        </div>
+        <input type="button" class="btn btn-primary" value="Test" id="btnInitTest2" />
+    </form>
+</section>
