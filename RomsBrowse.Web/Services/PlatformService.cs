@@ -7,7 +7,7 @@ using RomsBrowse.Web.ServiceModels;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class PlatformService(SqlServerContext ctx)
+    public class PlatformService(ApplicationContext ctx)
     {
         public async Task<Platform[]> GetPlatforms(bool includeRoms)
         {

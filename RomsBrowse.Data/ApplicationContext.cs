@@ -1,11 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data.Conversions;
 using RomsBrowse.Data.Models;
+using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
 {
-    public abstract class BaseContext(DbContextOptions opt) : DbContext(opt)
+    public abstract class ApplicationContext(DbContextOptions opt, DbContextSettingsProvider settings) : DbContext(opt)
     {
+        protected readonly DbContextSettingsProvider settings = settings;
+
         public bool IsConfigured { get; protected set; }
 
         public DbSet<Platform> Platforms { get; set; }
@@ -17,6 +20,8 @@ namespace RomsBrowse.Data
         public DbSet<Setting> Settings { get; set; }
 
         public DbSet<User> Users { get; set; }
+
+        public abstract bool ResetIndex<T>();
 
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

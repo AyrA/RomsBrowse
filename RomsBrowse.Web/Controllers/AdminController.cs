@@ -212,7 +212,7 @@ namespace RomsBrowse.Web.Controllers
                 case "Init":
                     if (!_rgs.IsScanning)
                     {
-                        _csp.ResetConnectionString();
+                        _csp.ResetSettings();
                         SetSuccessMessage("Database connection settings have been deleted");
                     }
                     else

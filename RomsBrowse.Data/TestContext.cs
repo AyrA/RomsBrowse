@@ -1,11 +1,12 @@
 ﻿using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
 {
     [AutoDIRegister(nameof(Register))]
-    public class TestContext(DbContextOptions<TestContext> opt) : DbContext(opt)
+    public class SqlServerTestContext(DbContextOptions<SqlServerTestContext> opt, DbContextSettingsProvider settings) : ApplicationContext(opt, settings)
     {
         public string? ConnectionString { get; set; }
 
@@ -26,23 +27,27 @@ namespace RomsBrowse.Data
         {
             if (string.IsNullOrWhiteSpace(ConnectionString))
             {
+                IsConfigured = false;
                 throw new InvalidOperationException("Connection string has not been set");
             }
             dbOpt.UseSqlServer(ConnectionString, sqlOpt =>
             {
                 sqlOpt.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
-                sqlOpt.MigrationsAssembly(typeof(SqlServerContext).Assembly.GetName().Name);
+                sqlOpt.MigrationsAssembly(typeof(SqlServerTestContext).Assembly.GetName().Name);
                 sqlOpt.EnableRetryOnFailure(2);
                 sqlOpt.CommandTimeout(5);
             });
             dbOpt.EnableSensitiveDataLogging(true);
             dbOpt.EnableDetailedErrors(true);
+            IsConfigured = true;
             base.OnConfiguring(dbOpt);
         }
 
         public static void Register(IServiceCollection services)
         {
-            services.AddDbContext<TestContext>();
+            services.AddDbContext<SqlServerTestContext>();
         }
+
+        public override bool ResetIndex<T>() => false;
     }
 }

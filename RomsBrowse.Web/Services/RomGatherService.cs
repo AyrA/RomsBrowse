@@ -64,7 +64,7 @@ namespace RomsBrowse.Web.Services
                 try
                 {
                     using var scope = provider.CreateScope();
-                    var ctx = scope.ServiceProvider.GetRequiredService<SqlServerContext>();
+                    var ctx = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
                     await ctx.SaveData.ExecuteDeleteAsync();
                     await ctx.RomFiles.ExecuteDeleteAsync();
                     await ctx.Platforms.ExecuteDeleteAsync();
@@ -120,7 +120,7 @@ namespace RomsBrowse.Web.Services
             try
             {
                 using var scope = provider.CreateScope();
-                var ctx = scope.ServiceProvider.GetRequiredService<SqlServerContext>();
+                var ctx = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
                 var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();
                 if (!ss.TryGetSetting(SettingsService.KnownSettings.RomDirectory, out rootDir)
                     || string.IsNullOrWhiteSpace(rootDir))
@@ -193,7 +193,7 @@ namespace RomsBrowse.Web.Services
                 .FromJsonRequired<RomDirConfig[]>();
         }
 
-        private int AddPlatform(SqlServerContext ctx, RomDirConfig config)
+        private int AddPlatform(ApplicationContext ctx, RomDirConfig config)
         {
             var p = new Platform()
             {
@@ -259,7 +259,7 @@ namespace RomsBrowse.Web.Services
 
         }
 
-        private int UpdatePlatform(SqlServerContext ctx, RomDirConfig config, Platform p)
+        private int UpdatePlatform(ApplicationContext ctx, RomDirConfig config, Platform p)
         {
             ctx.Platforms.Attach(p);
             p.ShortName = config.ShortName;
@@ -296,7 +296,7 @@ namespace RomsBrowse.Web.Services
             return ctx.SaveChanges();
         }
 
-        private int DeleteOldPlatforms(SqlServerContext ctx, IEnumerable<Platform> platforms)
+        private int DeleteOldPlatforms(ApplicationContext ctx, IEnumerable<Platform> platforms)
         {
             int count = 0;
             foreach (var platform in platforms)

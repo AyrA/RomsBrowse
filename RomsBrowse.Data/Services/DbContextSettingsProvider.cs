@@ -8,7 +8,7 @@ namespace RomsBrowse.Data.Services
     [AutoDIRegister(AutoDIType.Singleton)]
     public class DbContextSettingsProvider
     {
-        private record SettingsContents(string ConnectionString, string DbProvider);
+        public record SettingsContents(string ConnectionString, string DbProvider);
 
         private readonly string connStrFile;
         private readonly IPermEncryptionService _encService;
@@ -48,7 +48,7 @@ namespace RomsBrowse.Data.Services
             _encService = encryptionService;
         }
 
-        public void ResetConnectionString()
+        public void ResetSettings()
         {
             if (File.Exists(connStrFile))
             {
@@ -57,7 +57,7 @@ namespace RomsBrowse.Data.Services
             settings = null;
         }
 
-        public string GetConnectionString()
+        public SettingsContents GetSettings()
         {
             if (settings == null)
             {
@@ -66,10 +66,10 @@ namespace RomsBrowse.Data.Services
                     ?? throw new InvalidOperationException("Cannot deserialize settings");
                 settings = data;
             }
-            return settings.ConnectionString;
+            return settings;
         }
 
-        public string SetConnectionString(string connectionString, string provider)
+        public SettingsContents SetSettings(string connectionString, string provider)
         {
             ArgumentException.ThrowIfNullOrEmpty(connectionString);
             ArgumentException.ThrowIfNullOrEmpty(provider);
@@ -78,8 +78,7 @@ namespace RomsBrowse.Data.Services
             var json = JsonSerializer.Serialize(data);
 
             File.WriteAllBytes(connStrFile, _encService.Encrypt(Encoding.UTF8.GetBytes(json)));
-            settings = data;
-            return settings.ConnectionString;
+            return settings = data;
         }
     }
 }

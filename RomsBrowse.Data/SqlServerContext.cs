@@ -1,17 +1,15 @@
-﻿using AyrA.AutoDI;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
 {
-    [AutoDIRegister(nameof(Register))]
-    public class SqlServerContext : BaseContext
+    public class SqlServerContext : ApplicationContext
     {
         private readonly DbContextSettingsProvider _settings;
         private readonly MemoryCacheProvider _memCache;
 
-        public SqlServerContext(DbContextOptions<SqlServerContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache) : base(opt)
+        public SqlServerContext(DbContextOptions<SqlServerContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache) : base(opt, settings)
         {
             IsConfigured = settings.IsConnectionStringSet;
             _settings = settings;
@@ -24,7 +22,7 @@ namespace RomsBrowse.Data
             {
                 if (_settings.IsConnectionStringSet)
                 {
-                    dbOpt.UseSqlServer(_settings.GetConnectionString(), sqlOpt =>
+                    dbOpt.UseSqlServer(_settings.GetSettings().ConnectionString, sqlOpt =>
                     {
                         sqlOpt.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
                         sqlOpt.MigrationsAssembly(typeof(SqlServerContext).Assembly.GetName().Name);
@@ -47,10 +45,10 @@ namespace RomsBrowse.Data
 
         public static void Register(IServiceCollection services)
         {
-            services.AddDbContext<BaseContext, SqlServerContext>();
+            services.AddDbContext<ApplicationContext, SqlServerContext>();
         }
 
-        public bool ResetIndex<T>()
+        public override bool ResetIndex<T>()
         {
             var entityType = Model.FindEntityType(typeof(T))
                 ?? throw new ArgumentException($"Type {typeof(T)} has no entity");

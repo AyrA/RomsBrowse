@@ -13,7 +13,7 @@ namespace RomsBrowse.Web.Services
 
         public void SetConnectionString(string connStr, string dbProvider)
         {
-            cstr.SetConnectionString(connStr, dbProvider);
+            cstr.SetSettings(connStr, dbProvider);
         }
     }
 }

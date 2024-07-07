@@ -70,6 +70,7 @@ namespace RomsBrowse.Web.Controllers
             {
                 throw new InvalidOperationException("SetupService has not been set");
             }
+            //It's safe to always redirect because the InitController is not using this base class
             if (!_setupService.IsConfigured)
             {
                 context.Result = _setupService.SetupRedirect;

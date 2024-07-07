@@ -7,7 +7,7 @@ using RomsBrowse.Web.Extensions;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class SettingsService(SqlServerContext ctx, SetupService ss)
+    public class SettingsService(ApplicationContext ctx, SetupService ss)
     {
         public static class KnownSettings
         {
@@ -22,7 +22,7 @@ namespace RomsBrowse.Web.Services
 
         private static readonly Dictionary<string, string?> cache = new(StringComparer.InvariantCultureIgnoreCase);
 
-        private static void SetCache(SqlServerContext ctx, SetupService ss)
+        private static void SetCache(ApplicationContext ctx, SetupService ss)
         {
             if (cache.Count == 0 && ss.IsConfigured)
             {

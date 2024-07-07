@@ -10,6 +10,48 @@
 <form method="post" id="frmInit">
     <div class="row">
         <div class="col-md-4">
+            <label>
+                <input type="radio" name="@Html.NameFor(m => m.Provider)" value="1" checked="@(Model.Provider == DbProvider.SQLServer)" />
+                MS SQL Server or SQL Server Express
+            </label><br />
+            <label>
+                <input type="radio" name="@Html.NameFor(m => m.Provider)" value="2" checked="@(Model.Provider == DbProvider.SQLite)" />
+                SQLite
+            </label><br />
+        </div>
+    </div>
+    <div class="row mb-1">
+        <div class="col-md-6">
+            <p>
+                <i>
+                    The SQL system decides how data is stored in this application.
+                    Currently, two systems are offered:
+                </i>
+            </p>
+            <p>
+                <i>
+                    <b>MS SQL Server</b>:
+                    This is recommended for internet facing applications
+                    that may experience more than just light traffic.
+                    However, SQL Server requires manual installation
+                    and may be overkill for small applications.
+                </i>
+            </p>
+            <p>
+                <i>
+                    <b>SQLite</b>:
+                    SQLite is ideal for small installations
+                    where only a few users are simultaneously using it.
+                    It is purely file based, and requires no installation,
+                    but performance may be degraded if you experience
+                    higher than usual number of concurrent users.
+                </i>
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
             <label asp-for="ServerInstance">Server name and SQL instance</label>
             <input asp-for="ServerInstance" class="form-control" required placeholder="Server and instance name" />
         </div>

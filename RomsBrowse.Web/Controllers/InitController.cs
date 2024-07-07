@@ -5,7 +5,7 @@ using RomsBrowse.Web.ViewModels;
 
 namespace RomsBrowse.Web.Controllers
 {
-    public class InitController(TestContext ctx, SetupService ss) : Controller
+    public class InitController(SqlServerTestContext ctx, SetupService ss) : Controller
     {
         private record ApiResult(bool Success, string? Error);
 
