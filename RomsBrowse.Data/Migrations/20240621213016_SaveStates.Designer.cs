@@ -11,7 +11,7 @@ using RomsBrowse.Data;
 
 namespace RomsBrowse.Data.Migrations
 {
-    [DbContext(typeof(RomsContext))]
+    [DbContext(typeof(SqlServerContext))]
     [Migration("20240621213016_SaveStates")]
     partial class SaveStates
     {

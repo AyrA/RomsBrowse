@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public partial class RomSearchService(SettingsService ss, RomsContext ctx)
+    public partial class RomSearchService(SettingsService ss, SqlServerContext ctx)
     {
         private const int MaxResultCount = 100;
 

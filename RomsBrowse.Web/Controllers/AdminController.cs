@@ -17,9 +17,9 @@ namespace RomsBrowse.Web.Controllers
         private readonly UserService _userService;
         private readonly RomGatherService _rgs;
         private readonly SettingsService _ss;
-        private readonly ConnectionStringProvider _csp;
+        private readonly DbContextSettingsProvider _csp;
 
-        public AdminController(RomGatherService rgs, UserService userService, SettingsService ss, ConnectionStringProvider csp) : base(userService)
+        public AdminController(RomGatherService rgs, UserService userService, SettingsService ss, DbContextSettingsProvider csp) : base(userService)
         {
             _userService = userService;
             _rgs = rgs;

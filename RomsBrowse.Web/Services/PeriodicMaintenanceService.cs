@@ -30,7 +30,7 @@ namespace RomsBrowse.Web.Services
         private void Callback(object? state)
         {
             using var scope = provider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<RomsContext>();
+            var db = scope.ServiceProvider.GetRequiredService<SqlServerContext>();
             if (db.IsConfigured)
             {
                 var ss = scope.ServiceProvider.GetRequiredService<SettingsService>();

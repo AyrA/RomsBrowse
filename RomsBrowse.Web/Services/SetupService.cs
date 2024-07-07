@@ -5,9 +5,9 @@ using RomsBrowse.Data.Services;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Singleton)]
-    public class SetupService(ConnectionStringProvider cstr)
+    public class SetupService(DbContextSettingsProvider cstr)
     {
-        public bool IsConfigured => cstr.IsSet;
+        public bool IsConfigured => cstr.IsConnectionStringSet;
 
         public IActionResult SetupRedirect => new RedirectToActionResult("Index", "Init", null);
 

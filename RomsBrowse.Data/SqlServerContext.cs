@@ -1,52 +1,38 @@
 ﻿using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using RomsBrowse.Data.Conversions;
-using RomsBrowse.Data.Models;
 using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
 {
     [AutoDIRegister(nameof(Register))]
-    public class RomsContext(DbContextOptions<RomsContext> opt, ConnectionStringProvider connStr, MemoryCacheProvider memCache) : DbContext(opt)
+    public class SqlServerContext : BaseContext
     {
-        public bool IsConfigured => connStr.IsSet;
+        private readonly DbContextSettingsProvider _settings;
+        private readonly MemoryCacheProvider _memCache;
 
-        public DbSet<Platform> Platforms { get; set; }
-
-        public DbSet<RomFile> RomFiles { get; set; }
-
-        public DbSet<SaveData> SaveData { get; set; }
-
-        public DbSet<User> Users { get; set; }
-
-        public DbSet<Setting> Settings { get; set; }
-
-        protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+        public SqlServerContext(DbContextOptions<SqlServerContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache) : base(opt)
         {
-            ArgumentNullException.ThrowIfNull(configurationBuilder);
-
-            configurationBuilder.Properties<DateTime>()
-                .HaveConversion<DateTimeAsUtcValueConverter>();
-            configurationBuilder.Properties<DateTime?>()
-                .HaveConversion<NullableDateTimeAsUtcValueConverter>();
+            IsConfigured = settings.IsConnectionStringSet;
+            _settings = settings;
+            _memCache = memCache;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder dbOpt)
         {
             if (!dbOpt.IsConfigured)
             {
-                if (connStr.IsSet)
+                if (_settings.IsConnectionStringSet)
                 {
-                    dbOpt.UseSqlServer(connStr.GetConnectionString(), sqlOpt =>
+                    dbOpt.UseSqlServer(_settings.GetConnectionString(), sqlOpt =>
                     {
                         sqlOpt.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery);
-                        sqlOpt.MigrationsAssembly(typeof(RomsContext).Assembly.GetName().Name);
+                        sqlOpt.MigrationsAssembly(typeof(SqlServerContext).Assembly.GetName().Name);
                         sqlOpt.EnableRetryOnFailure();
                         sqlOpt.CommandTimeout(10);
                     });
                     //Note: This caches queries, and not data
-                    dbOpt.UseMemoryCache(memCache.Cache);
+                    dbOpt.UseMemoryCache(_memCache.Cache);
 #if DEBUG
                     dbOpt.EnableSensitiveDataLogging(true);
                     dbOpt.EnableDetailedErrors(true);
@@ -61,7 +47,7 @@ namespace RomsBrowse.Data
 
         public static void Register(IServiceCollection services)
         {
-            services.AddDbContext<RomsContext>();
+            services.AddDbContext<BaseContext, SqlServerContext>();
         }
 
         public bool ResetIndex<T>()

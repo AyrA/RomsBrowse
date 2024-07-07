@@ -11,7 +11,7 @@ using RomsBrowse.Data;
 
 namespace RomsBrowse.Data.Migrations
 {
-    [DbContext(typeof(RomsContext))]
+    [DbContext(typeof(SqlServerContext))]
     [Migration("20240622194619_RenameUserField")]
     partial class RenameUserField
     {

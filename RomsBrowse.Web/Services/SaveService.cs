@@ -9,7 +9,7 @@ using RomsBrowse.Web.ViewModels;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class SaveService(ICompressionService compressor, RomsContext ctx, SettingsService ss, ILogger<SaveService> logger)
+    public class SaveService(ICompressionService compressor, SqlServerContext ctx, SettingsService ss, ILogger<SaveService> logger)
     {
         public async Task SaveData(int gameId, string username, byte[] imageData, byte[] stateData)
         {

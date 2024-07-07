@@ -14,7 +14,7 @@ using System.Text;
 namespace RomsBrowse.Web.Services
 {
     [AutoDIRegister(AutoDIType.Scoped)]
-    public class UserService(RomsContext ctx, IMemoryCache cache, IPasswordCheckerService passwordChecker, PasswordService passwordService, ILogger<UserService> logger)
+    public class UserService(SqlServerContext ctx, IMemoryCache cache, IPasswordCheckerService passwordChecker, PasswordService passwordService, ILogger<UserService> logger)
     {
         /// <summary>
         /// Cache value for the <see cref="HasAdmin"/> method

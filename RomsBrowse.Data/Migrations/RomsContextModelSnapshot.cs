@@ -10,7 +10,7 @@ using RomsBrowse.Data;
 
 namespace RomsBrowse.Data.Migrations
 {
-    [DbContext(typeof(RomsContext))]
+    [DbContext(typeof(SqlServerContext))]
     partial class RomsContextModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)

@@ -5,15 +5,15 @@ using System.Text;
 namespace RomsBrowse.Data.Services
 {
     [AutoDIRegister(AutoDIType.Singleton)]
-    public class ConnectionStringProvider
+    public class DbContextSettingsProvider
     {
         private readonly string connStrFile;
         private readonly IPermEncryptionService _encService;
         private string? connStr;
 
-        public bool IsSet => File.Exists(connStrFile);
+        public bool IsConnectionStringSet => File.Exists(connStrFile);
 
-        public ConnectionStringProvider(IPermEncryptionService encryptionService)
+        public DbContextSettingsProvider(IPermEncryptionService encryptionService)
         {
             string? baseDir = null;
             if (OperatingSystem.IsWindows())

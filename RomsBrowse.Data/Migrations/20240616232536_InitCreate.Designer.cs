@@ -10,7 +10,7 @@ using RomsBrowse.Data;
 
 namespace RomsBrowse.Data.Migrations
 {
-    [DbContext(typeof(RomsContext))]
+    [DbContext(typeof(SqlServerContext))]
     [Migration("20240616232536_InitCreate")]
     partial class InitCreate
     {

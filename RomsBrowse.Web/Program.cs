@@ -164,7 +164,7 @@ async Task MigrateAsync()
 {
     using var scope = app.Services.CreateScope();
     var migLog = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
+    var ctx = scope.ServiceProvider.GetRequiredService<SqlServerContext>();
     var pending = (await ctx.Database.GetPendingMigrationsAsync()).ToList();
     using var logScope = migLog.BeginScope(ctx);
     if (pending.Count > 0)
@@ -194,7 +194,7 @@ async Task MigrateAsync()
 bool IsDbConfigured()
 {
     using var scope = app.Services.CreateScope();
-    var ctx = scope.ServiceProvider.GetRequiredService<RomsContext>();
+    var ctx = scope.ServiceProvider.GetRequiredService<SqlServerContext>();
     return ctx.IsConfigured;
 }
 
