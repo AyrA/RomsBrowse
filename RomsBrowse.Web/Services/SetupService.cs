@@ -11,9 +11,9 @@ namespace RomsBrowse.Web.Services
 
         public IActionResult SetupRedirect => new RedirectToActionResult("Index", "Init", null);
 
-        public void SetConnectionString(string connStr)
+        public void SetConnectionString(string connStr, string dbProvider)
         {
-            cstr.SetConnectionString(connStr);
+            cstr.SetConnectionString(connStr, dbProvider);
         }
     }
 }
