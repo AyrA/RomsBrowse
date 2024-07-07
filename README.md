@@ -2,18 +2,6 @@
 
 ROM browser with built-in emulator and server side game saves
 
-## Basic Configuration
-
-You need to point this application to an SQL server.
-By default, the configuration points to a local SQL server express instance using integrated authentication.
-In release mode, it uses a db named "roms", and in development mode it uses "romsdev".
-It's safe to keep both of them on the same server.
-
-When the application is run for the first time, it creates all the necessary tables,
-so make sure the user you run the application as has those permissions on the SQL server.
-
-If you need to change the SQL server, edit the connection string in `appsettings.json` as needed.
-
 ## Running the Application
 
 The application can run standalone, as IIS application, or as a service.
@@ -34,7 +22,8 @@ Simply create a new website in IIS, then dump all application files into the web
 
 This is the recommended way to run the application.
 This way it runs even when nobody is logged into the device,
-and it can be used directly, or in combination with any webserver that supports reverse proxy operations.
+and it can be used directly, or in combination with any webserver that supports reverse proxy operations,
+not just IIS.
 
 To install the application as a service, do the following:
 
@@ -46,11 +35,14 @@ To install the application as a service, do the following:
 6. Click "OK"
 7. Open the properties of the wwwroot directory, and grant write access to `NT Service\RomsBrowse`
 8. Connect to your SQL server and create a database named "roms"
-9. Grant access to `NT Service\RomsBrowse` and grant `db_datareader`, `db_datawriter` and `ddl_admin` rights to the user.
+9. Grant `db_datareader`, `db_datawriter` and `ddl_admin` rights to `NT Service\RomsBrowse`.
 10. Start the service
 
-If done properly, you will find an "emulator" folder being created in the wwwroot folder,
-and the SQL database will contain tables.
+## Initial Configuration
+
+Until the database settings have been configured,
+you all requests will be redirected to the setup page.
+Fill in the details relevant for your SQL setup, then save the settings.
 
 ## Initial Account
 
@@ -58,12 +50,12 @@ The first account you create will be the admin account.
 To ensure nobody else can do this, you must copy the value of the "AdminToken"
 from the "Settings" SQL table.
 
-The registration form provides a field to past this value into.
+The registration form provides a field to paste this value into.
 
 ## Configuration
 
 When logged in as administrator,
-you can use the account drop down menu in the top navbar to open the application settings,
+you can use the admin drop down menu in the top navbar to open the application settings,
 there you can configure all aspects of the application.
 
 ## ROMs Directory
