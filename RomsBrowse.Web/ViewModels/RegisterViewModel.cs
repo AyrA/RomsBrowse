@@ -24,7 +24,9 @@ namespace RomsBrowse.Web.ViewModels
 
         public void ClearSensitiveData()
         {
+#if !DEBUG
             AdminToken = null;
+#endif
             Password1 = null;
             Password2 = null;
         }

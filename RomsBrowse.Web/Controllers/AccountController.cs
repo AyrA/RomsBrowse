@@ -83,6 +83,17 @@ namespace RomsBrowse.Web.Controllers
             {
                 HasAdmin = await _userService.HasAdmin()
             };
+#if DEBUG
+            //During debug mode, add the token
+            //so we don't have to consult the db every time during testing
+            if (!vm.HasAdmin)
+            {
+                if (Guid.TryParse(_settingsService.GetRawValue(SettingsService.KnownSettings.AdminToken), out var adminToken))
+                {
+                    vm.AdminToken = adminToken;
+                }
+            }
+#endif
             return View(vm);
         }
 
