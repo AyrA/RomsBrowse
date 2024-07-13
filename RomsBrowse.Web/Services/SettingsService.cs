@@ -112,6 +112,24 @@ namespace RomsBrowse.Web.Services
         }
 
         /// <summary>
+        /// Gets a raw setting value
+        /// </summary>
+        /// <param name="name">Setting name</param>
+        /// <returns>Setting value, or null if not found</returns>
+        public string? GetRawValue(string name)
+        {
+            lock (cache)
+            {
+                SetCache(ctx, ss);
+                if (cache.TryGetValue(name, out var s) && s != null)
+                {
+                    return s;
+                }
+                return default;
+            }
+        }
+
+        /// <summary>
         /// Tries to get a parsed setting value
         /// </summary>
         /// <param name="name">Setting name</param>
