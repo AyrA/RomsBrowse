@@ -108,7 +108,7 @@ namespace DirBrowse {
         const fd = new FormData();
         fd.addCsrf();
         fd.set("Folder", parent ?? "");
-        const result = await fetch("/Settings/Folder", { method: "POST", body: fd });
+        const result = await fetch("/Admin/Folder", { method: "POST", body: fd });
         if (result.ok) {
             const contents = (await result.json()) as DirBrowseRequestResult;
             return contents;
