@@ -8,6 +8,7 @@ using RomsBrowse.Data.Enums;
 using RomsBrowse.Data.Models;
 using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.ViewModels;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using System.Text;
 
@@ -46,7 +47,7 @@ namespace RomsBrowse.Web.Services
             });
             if (track && user != null)
             {
-                ctx.Users.Attach(user);
+                return GetTracked(user);
             }
             return user;
 
@@ -62,7 +63,7 @@ namespace RomsBrowse.Web.Services
             });
             if (track && user != null)
             {
-                ctx.Users.Attach(user);
+                return GetTracked(user);
             }
             return user;
         }
@@ -87,15 +88,14 @@ namespace RomsBrowse.Web.Services
             ctx.Users.Add(u);
             try
             {
-                await ctx.SaveChangesAsync();
+                await SaveChanges(u);
                 hasAdmin = null;
                 return true;
             }
             catch
             {
-                ctx.ChangeTracker.Clear();
+                return false;
             }
-            return false;
         }
 
         public async Task Delete(string userName)
@@ -181,7 +181,7 @@ namespace RomsBrowse.Web.Services
             {
                 return hasAdmin.Value;
             }
-            hasAdmin = await ctx.Users.AnyAsync(m => m.Flags.HasFlag(Data.Enums.UserFlags.Admin));
+            hasAdmin = await ctx.Users.AnyAsync(m => m.Flags.HasFlag(UserFlags.Admin));
             return hasAdmin.Value;
         }
 
@@ -200,7 +200,7 @@ namespace RomsBrowse.Web.Services
                     {
                         user.Hash = passwordService.HashPassword(password);
                     }
-                    await ctx.SaveChangesAsync();
+                    await SaveChanges(user);
                     return new(true, user);
                 }
             }
@@ -227,7 +227,7 @@ namespace RomsBrowse.Web.Services
             if (user != null)
             {
                 user.LastActivity = DateTime.UtcNow;
-                return 0 < await ctx.SaveChangesAsync();
+                return 0 < await SaveChanges(user);
             }
             return false;
         }
@@ -248,7 +248,7 @@ namespace RomsBrowse.Web.Services
             {
                 hasAdmin = null;
             }
-            await ctx.SaveChangesAsync();
+            await SaveChanges(u);
             return true;
         }
 
@@ -264,7 +264,7 @@ namespace RomsBrowse.Web.Services
             {
                 hasAdmin = true;
             }
-            await ctx.SaveChangesAsync();
+            await SaveChanges(u);
             return true;
         }
 
@@ -280,7 +280,7 @@ namespace RomsBrowse.Web.Services
             {
                 hasAdmin = null;
             }
-            await ctx.SaveChangesAsync();
+            await SaveChanges(u);
             return true;
         }
 
@@ -296,7 +296,7 @@ namespace RomsBrowse.Web.Services
                 throw new Exception("Old password is incorrect");
             }
             user.Hash = passwordService.HashPassword(newPassword);
-            await ctx.SaveChangesAsync();
+            await SaveChanges(user);
         }
 
         public async Task<AccountsViewModel> GetAccounts(int page, int pageSize, string? search)
@@ -323,7 +323,7 @@ namespace RomsBrowse.Web.Services
             user.Hash = passwordService.HashPassword(newPassword);
         }
 
-        public async Task SaveChanges(User user)
+        public async Task<int> SaveChanges(User user)
         {
             user.Validate();
             if (!ctx.ChangeTracker.Entries<User>().Any(m => m.Entity == user))
@@ -331,7 +331,23 @@ namespace RomsBrowse.Web.Services
                 logger.LogWarning("User #{Id} was not tracked when call to SaveChanges was made", user.Id);
                 ctx.Users.Update(user);
             }
-            await ctx.SaveChangesAsync();
+            var count = await ctx.SaveChangesAsync();
+            //Always update cache when changes are made
+            if (count > 0)
+            {
+                var size = GetSize(user);
+                var opt = new MemoryCacheEntryOptions()
+                {
+                    Size = size
+                };
+                if (user.CanExpire)
+                {
+                    opt.AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
+                }
+                cache.Set($"user:{user.Id}", user, opt);
+                cache.Set($"user:{user.Username.ToLowerInvariant()}", user, opt);
+            }
+            return count;
         }
 
         private IQueryable<User> FilterUsers(string? username)
@@ -362,7 +378,7 @@ namespace RomsBrowse.Web.Services
             ctx.Users.Remove(user);
             cache.Remove($"user:{user.Username.ToLowerInvariant()}");
             cache.Remove($"user:{user.Id}");
-            await ctx.SaveChangesAsync();
+            await SaveChanges(user);
         }
 
         private async Task ChangeLock(User? user)
@@ -398,6 +414,56 @@ namespace RomsBrowse.Web.Services
                 user.IsLocked = false;
             }
             await SaveChanges(user);
+        }
+
+        private bool IsTracked([NotNullWhen(true)] User? user)
+        {
+            if (user == null)
+            {
+                return false;
+            }
+            if (user.Id != 0)
+            {
+                return ctx.ChangeTracker.Entries<User>().Any(m => m.Entity.Id == user.Id);
+            }
+            return ctx.ChangeTracker.Entries<User>().Any(m => m.Entity.Username == user.Username);
+        }
+
+        private User? GetTracked(User? user)
+        {
+            User? result;
+            if (user == null)
+            {
+                return null;
+            }
+            if (user.Id != 0)
+            {
+                result = GetTracked(user.Id);
+            }
+            else
+            {
+                result = GetTracked(user.Username);
+            }
+            if (result == null)
+            {
+                ctx.Users.Attach(user);
+                return user;
+            }
+            return result;
+        }
+
+        private User? GetTracked(int userId)
+        {
+            return ctx.ChangeTracker
+                .Entries<User>()
+                .FirstOrDefault(m => m.Entity.Id == userId)?.Entity;
+        }
+
+        private User? GetTracked(string userName)
+        {
+            return ctx.ChangeTracker
+                .Entries<User>()
+                .FirstOrDefault(m => m.Entity.Username == userName)?.Entity;
         }
 
         /// <summary>
