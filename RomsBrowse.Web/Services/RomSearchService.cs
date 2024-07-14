@@ -33,13 +33,22 @@ namespace RomsBrowse.Web.Services
             {
                 return [];
             }
-            return await ctx.RomFiles
+            return await ctx
+                .SearchRoms(terms)
                 .Include(m => m.Platform)
-                .Where(m => EF.Functions.Contains(m.DisplayName, terms))
                 .AsNoTracking()
                 .OrderBy(m => m.DisplayName)
                 .Take(ResultLimit)
                 .ToArrayAsync();
+            /*
+            return await ctx.RomFiles
+                .Include(m => m.Platform)
+                .Where(m => EF.Functions.FreeText(m.DisplayName, terms))
+                .AsNoTracking()
+                .OrderBy(m => m.DisplayName)
+                .Take(ResultLimit)
+                .ToArrayAsync();
+            //*/
         }
 
         public async Task<RomFile[]> Search(string terms, int platformId)
@@ -50,8 +59,9 @@ namespace RomsBrowse.Web.Services
             {
                 return [];
             }
-            return await ctx.RomFiles
-                .Where(m => m.PlatformId == platformId && EF.Functions.FreeText(m.DisplayName, terms))
+            return await ctx
+                .SearchRoms(terms)
+                .Where(m => m.PlatformId == platformId)
                 .AsNoTracking()
                 .OrderBy(m => m.DisplayName)
                 .Take(ResultLimit)

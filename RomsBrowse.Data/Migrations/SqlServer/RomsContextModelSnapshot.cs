@@ -134,7 +134,7 @@ namespace RomsBrowse.Data.Migrations
 
                     b.HasIndex("RomFileId");
 
-                    b.HasIndex("UserId", "RomFileId")
+                    b.HasIndex("UserId", "RomFileId", "Flags")
                         .IsUnique();
 
                     b.ToTable("SaveData");

@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations;
 namespace RomsBrowse.Data.Models
 {
 #nullable disable
-    [Index(nameof(UserId), nameof(RomFileId), IsUnique = true)]
+    [Index(nameof(UserId), nameof(RomFileId), nameof(Flags), IsUnique = true)]
     [Index(nameof(Created))]
     [PrimaryKey(nameof(UserId), nameof(RomFileId), nameof(Flags))]
     public class SaveData : IValidateable

@@ -1,6 +1,7 @@
 ﻿using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RomsBrowse.Data.Models;
 using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
@@ -49,5 +50,10 @@ namespace RomsBrowse.Data
         }
 
         public override bool ResetIndex<T>() => false;
+
+        public override IQueryable<RomFile> SearchRoms(string text)
+        {
+            throw new InvalidOperationException("Not available in test context");
+        }
     }
 }

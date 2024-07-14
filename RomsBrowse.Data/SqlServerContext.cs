@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using RomsBrowse.Data.Models;
 using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
@@ -8,12 +10,14 @@ namespace RomsBrowse.Data
     {
         private readonly DbContextSettingsProvider _settings;
         private readonly MemoryCacheProvider _memCache;
+        private readonly ILoggerFactory _loggerFactory;
 
-        public SqlServerContext(DbContextOptions<SqlServerContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache) : base(opt, settings)
+        public SqlServerContext(DbContextOptions<SqlServerContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache, ILoggerFactory loggerFactory) : base(opt, settings)
         {
             IsConfigured = settings.IsConnectionStringSet;
             _settings = settings;
             _memCache = memCache;
+            _loggerFactory = loggerFactory;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder dbOpt)
@@ -31,6 +35,7 @@ namespace RomsBrowse.Data
                     });
                     //Note: This caches queries, and not data
                     dbOpt.UseMemoryCache(_memCache.Cache);
+                    dbOpt.UseLoggerFactory(_loggerFactory);
 #if DEBUG
                     dbOpt.EnableSensitiveDataLogging(true);
                     dbOpt.EnableDetailedErrors(true);
@@ -62,6 +67,11 @@ namespace RomsBrowse.Data
                 return false;
             }
             return true;
+        }
+
+        public override IQueryable<RomFile> SearchRoms(string text)
+        {
+            return RomFiles.Where(m => EF.Functions.FreeText(m.DisplayName, text));
         }
     }
 }

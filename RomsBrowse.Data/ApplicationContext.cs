@@ -23,6 +23,8 @@ namespace RomsBrowse.Data
 
         public abstract bool ResetIndex<T>();
 
+        public abstract IQueryable<RomFile> SearchRoms(string text);
+
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             ArgumentNullException.ThrowIfNull(configurationBuilder);

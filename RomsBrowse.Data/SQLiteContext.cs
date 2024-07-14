@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using RomsBrowse.Data.Models;
 using RomsBrowse.Data.Services;
 
 namespace RomsBrowse.Data
@@ -6,11 +8,13 @@ namespace RomsBrowse.Data
     public class SQLiteContext : ApplicationContext
     {
         private readonly MemoryCacheProvider _memCache;
+        private readonly ILoggerFactory _loggerFactory;
 
-        public SQLiteContext(DbContextOptions<SQLiteContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache) : base(opt, settings)
+        public SQLiteContext(DbContextOptions<SQLiteContext> opt, DbContextSettingsProvider settings, MemoryCacheProvider memCache, ILoggerFactory loggerFactory) : base(opt, settings)
         {
             IsConfigured = settings.IsConnectionStringSet;
             _memCache = memCache;
+            _loggerFactory = loggerFactory;
         }
 
         public override bool ResetIndex<T>()
@@ -22,6 +26,11 @@ namespace RomsBrowse.Data
                 ?? throw new ArgumentException($"Type {typeof(T)} is not mapped to a table");
 
             return 0 < Database.ExecuteSqlRaw("DELETE FROM sqlite_sequence WHERE name = {0}", tableName);
+        }
+
+        public override IQueryable<RomFile> SearchRoms(string text)
+        {
+            return RomFiles.Where(m => EF.Functions.Like(m.DisplayName, $"%{text}%"));
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder dbOpt)
@@ -36,6 +45,7 @@ namespace RomsBrowse.Data
                 });
                 //Note: This caches queries, and not data
                 dbOpt.UseMemoryCache(_memCache.Cache);
+                dbOpt.UseLoggerFactory(_loggerFactory);
 #if DEBUG
                 dbOpt.EnableSensitiveDataLogging(true);
                 dbOpt.EnableDetailedErrors(true);

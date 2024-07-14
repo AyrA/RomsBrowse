@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace RomsBrowse.Data.Services
 {
@@ -28,14 +29,15 @@ namespace RomsBrowse.Data.Services
         private static ApplicationContext GetContext(IServiceProvider provider)
         {
             var ctxService = provider.GetRequiredService<DbContextSettingsProvider>();
+            var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
             if (ctxService.IsConnectionStringSet)
             {
                 var settings = ctxService.GetSettings();
                 var memcache = provider.GetRequiredService<MemoryCacheProvider>();
                 return settings.DbProvider switch
                 {
-                    "mssql" => new SqlServerContext(new DbContextOptions<SqlServerContext>(), ctxService, memcache),
-                    "sqlite" => new SQLiteContext(new DbContextOptions<SQLiteContext>(), ctxService, memcache),
+                    "mssql" => new SqlServerContext(new DbContextOptions<SqlServerContext>(), ctxService, memcache, loggerFactory),
+                    "sqlite" => new SQLiteContext(new DbContextOptions<SQLiteContext>(), ctxService, memcache, loggerFactory),
                     _ => throw new NotImplementedException($"Unknown db type: {settings.DbProvider}"),
                 };
             }
