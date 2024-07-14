@@ -13,9 +13,12 @@ run it from the command line and supply the `--urls` argument to tell it where t
 
 Example: `--urls http://localhost:54321`
 
+Then simply point your webbrowser at this address
+
 ### IIS
 
-The application comes with the necessary `web.config` to make IIS launch the application automatically.
+When using `dotnet publish`, it creates the necessary `web.config`
+to make IIS launch the application automatically.
 Simply create a new website in IIS, then dump all application files into the web directory.
 
 ### Service
@@ -28,21 +31,23 @@ not just IIS.
 To install the application as a service, do the following:
 
 1. Put the application into an empty directory of your choice
-2. Run the command `sc create RomsBrowse binPath= "C:\Path\To\RomwBrowse.Web.exe --urls http://localhost:54321"`
+2. Run the command `sc create RomsBrowse binPath= "C:\Path\To\RomsBrowse.Web.exe --urls http://localhost:54321"`
 3. Run `services.msc` and double click on the RomsBrowse service
 4. Change the startup type to automatic
 5. In the "Log on" tab, select "This account", then type `NT Service\RomsBrowse`, and erase the password fields.
 6. Click "OK"
 7. Open the properties of the wwwroot directory, and grant write access to `NT Service\RomsBrowse`
-8. Connect to your SQL server and create a database named "roms"
-9. Grant `db_datareader`, `db_datawriter` and `ddl_admin` rights to `NT Service\RomsBrowse`.
+8. (If using SQL server) Connect to your SQL server and create a database named "roms"
+9. (If using SQL server) Grant `db_datareader`, `db_datawriter` and `ddl_admin` rights to `NT Service\RomsBrowse`.
 10. Start the service
 
 ## Initial Configuration
 
 Until the database settings have been configured,
-you all requests will be redirected to the setup page.
+all requests will be redirected to the setup page.
 Fill in the details relevant for your SQL setup, then save the settings.
+
+RomsBrowse supports SQLite and SQL server
 
 ## Initial Account
 
@@ -61,7 +66,7 @@ there you can configure all aspects of the application.
 ## ROMs Directory
 
 The ROM file directory needs to have a certain layout to be usable.
-The application contains a help for how to set up the directory structure in the accounts menu
+The application contains a help for how to set up the directory structure in the admin menu
 when you're logged in as administrator
 
 ## Server Side Save States
