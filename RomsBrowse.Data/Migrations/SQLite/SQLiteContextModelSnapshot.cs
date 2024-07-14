@@ -111,7 +111,7 @@ namespace RomsBrowse.Data.Migrations.SQLite
 
                     b.Property<byte[]>("Data")
                         .IsRequired()
-                        .HasMaxLength(1048576)
+                        .HasMaxLength(33554432)
                         .HasColumnType("BLOB");
 
                     b.Property<byte[]>("Image")

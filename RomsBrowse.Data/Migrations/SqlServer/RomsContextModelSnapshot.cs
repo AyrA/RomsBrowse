@@ -120,7 +120,7 @@ namespace RomsBrowse.Data.Migrations
 
                     b.Property<byte[]>("Data")
                         .IsRequired()
-                        .HasMaxLength(1048576)
+                        .HasMaxLength(33554432)
                         .HasColumnType("varbinary(max)");
 
                     b.Property<byte[]>("Image")

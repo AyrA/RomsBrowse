@@ -31,7 +31,7 @@ namespace RomsBrowse.Data.Models
         [Required, MaxLength(1024 * 1024)]
         public byte[] Image { get; set; }
 
-        [Required, MaxLength(1024 * 1024)]
+        [Required, MaxLength(1024 * 1024 * 32)]
         public byte[] Data { get; set; }
 
         public void Validate()
