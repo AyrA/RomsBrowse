@@ -164,7 +164,7 @@ namespace RomsBrowse.Web.Services
                 }
                 if (total > 0)
                 {
-                    hasAdmin = false;
+                    hasAdmin = null;
                 }
                 return total;
             }
