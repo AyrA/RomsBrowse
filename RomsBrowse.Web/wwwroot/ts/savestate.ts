@@ -88,6 +88,7 @@ namespace SaveState {
                 }
             }
             if (changed) {
+                //@ts-ignore
                 ramFileContents = sram;
                 const screenshot = await EmulatorInterop.getScreenshot();
                 if (!screenshot || screenshot.length < 50) {

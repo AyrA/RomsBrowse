@@ -21,6 +21,7 @@ using RomsBrowse.Common.Services;
 using RomsBrowse.Data;
 using RomsBrowse.Web.Controllers;
 using RomsBrowse.Web.Services;
+using Serilog;
 using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions()
@@ -40,7 +41,7 @@ builder.Host.UseWindowsService(options =>
 AutoDIExtensions.Logger = Console.Out;
 AutoDIExtensions.DebugLogging = true;
 #endif
-builder.Services.AddLogging(ConfigureLogging);
+builder.Services.AddSerilog((opt) => ConfigureLogging(opt, builder.Configuration));
 
 //Auto register services
 builder.Services.AutoRegisterAllAssemblies();
@@ -124,20 +125,9 @@ bool IsDbConfigured()
     return ctx.IsConfigured;
 }
 
-static void ConfigureLogging(ILoggingBuilder builder)
+static void ConfigureLogging(LoggerConfiguration logger, IConfiguration config)
 {
-    var isWin = OperatingSystem.IsWindows();
-    //Log to console if not run as a service or not on Windows
-    if (!isWin || !WindowsServiceHelpers.IsWindowsService())
-    {
-        builder.AddConsole();
-    }
-
-    //Log to event log on windows if run as a service
-    if (isWin && WindowsServiceHelpers.IsWindowsService())
-    {
-        builder.AddEventLog(opt => opt.Filter = (msg, level) => level >= LogLevel.Error);
-    }
+    logger.ReadFrom.Configuration(config);
 }
 
 static void SetThreadLanguage(string language)
