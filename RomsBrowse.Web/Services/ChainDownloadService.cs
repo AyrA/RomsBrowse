@@ -10,7 +10,7 @@ namespace RomsBrowse.Web.Services
         public static readonly string Magic = "CHAIN";
         public static readonly ushort SupportedVersion = 1;
 
-        public async Task Download(string target, Uri source)
+        public async Task Download(string target, Uri source, CancellationToken ct)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(target);
             ArgumentNullException.ThrowIfNull(source);
@@ -25,7 +25,7 @@ namespace RomsBrowse.Web.Services
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
             });
-            var res = await cli.GetAsync(source, HttpCompletionOption.ResponseHeadersRead);
+            var res = await cli.GetAsync(source, HttpCompletionOption.ResponseHeadersRead, ct);
             try
             {
                 res.EnsureSuccessStatusCode();
@@ -36,7 +36,7 @@ namespace RomsBrowse.Web.Services
                     source, res.StatusCode);
                 throw;
             }
-            using var data = res.Content.ReadAsStream();
+            using var data = res.Content.ReadAsStream(ct);
             using var br = new BinaryReader(data);
             var compare = Encoding.UTF8.GetBytes(Magic);
 
@@ -53,6 +53,7 @@ namespace RomsBrowse.Web.Services
             ChainEntry? entry;
             do
             {
+                ct.ThrowIfCancellationRequested();
                 entry = ReadEntry(br);
                 if (entry != null)
                 {
