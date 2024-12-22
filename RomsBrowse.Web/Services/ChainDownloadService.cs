@@ -21,7 +21,10 @@ namespace RomsBrowse.Web.Services
                 throw new DirectoryNotFoundException($"Directory does not exist: {target}");
             }
 
-            using var cli = new HttpClient();
+            using var cli = new HttpClient(new HttpClientHandler()
+            {
+                AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate
+            });
             var res = await cli.GetAsync(source, HttpCompletionOption.ResponseHeadersRead);
             try
             {
