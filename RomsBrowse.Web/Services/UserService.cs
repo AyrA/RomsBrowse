@@ -162,6 +162,7 @@ namespace RomsBrowse.Web.Services
                     cache.Remove($"user:{user.Id}");
                     ++total;
                 }
+                ctx.SaveChanges();
                 if (total > 0)
                 {
                     hasAdmin = null;

@@ -86,7 +86,7 @@ namespace RomsBrowse.Web.Services
                 logger.LogInformation("Running state and SRAM cleanup. Removing entries older than {Cutoff}", maxAge);
                 var cutoff = DateTime.UtcNow.Subtract(maxAge);
                 return
-                    ctx.SaveData.Where(m => m.Created < cutoff && !m.User.Flags.HasFlag(UserFlags.NoExpireSaveState)).ExecuteDelete();
+                    ctx.SaveData.Where(m => m.Created < cutoff && !m.User.Flags.HasFlag(UserFlags.Admin) && !m.User.Flags.HasFlag(UserFlags.NoExpireSaveState)).ExecuteDelete();
             }
             else
             {
@@ -99,19 +99,16 @@ namespace RomsBrowse.Web.Services
         {
             var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username)
                 ?? throw new Exception("User does not exist");
-            if (type == SaveFlags.State || type == SaveFlags.SRAM)
+            if (!Enum.IsDefined(type))
             {
-                var changed = await ctx.SaveData
-                    .Where(m => m.UserId == user.Id && m.RomFileId == gameId && m.Flags.HasFlag(type))
-                    .ExecuteUpdateAsync(m => m.SetProperty(p => p.Created, DateTime.UtcNow));
-                if (changed == 0)
-                {
-                    throw new Exception($"No {type} data found for this game");
-                }
+                throw new ArgumentException("Invalid save type");
             }
-            else
+            var changed = await ctx.SaveData
+                .Where(m => m.UserId == user.Id && m.RomFileId == gameId && m.Flags.HasFlag(type))
+                .ExecuteUpdateAsync(m => m.SetProperty(p => p.Created, DateTime.UtcNow));
+            if (changed == 0)
             {
-                throw new Exception("Invalid save type");
+                throw new Exception($"No {type} data found for this game");
             }
         }
 
@@ -119,19 +116,16 @@ namespace RomsBrowse.Web.Services
         {
             var user = await ctx.Users.AsNoTracking().FirstOrDefaultAsync(m => m.Username == username)
                 ?? throw new Exception("User does not exist");
-            if (type == SaveFlags.State || type == SaveFlags.SRAM)
+            if (!Enum.IsDefined(type))
             {
-                var changed = await ctx.SaveData
-                    .Where(m => m.UserId == user.Id && m.RomFileId == gameId && m.Flags.HasFlag(type))
-                    .ExecuteDeleteAsync();
-                if (changed == 0)
-                {
-                    throw new Exception($"No {type} data found for this game");
-                }
+                throw new ArgumentException("Invalid save type");
             }
-            else
+            var changed = await ctx.SaveData
+                .Where(m => m.UserId == user.Id && m.RomFileId == gameId && m.Flags.HasFlag(type))
+                .ExecuteDeleteAsync();
+            if (changed == 0)
             {
-                throw new Exception("Invalid save type");
+                throw new Exception($"No {type} data found for this game");
             }
         }
 
