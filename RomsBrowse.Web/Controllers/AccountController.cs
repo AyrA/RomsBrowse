@@ -15,13 +15,15 @@ namespace RomsBrowse.Web.Controllers
         private readonly SettingsService _settingsService;
         private readonly IPasswordCheckerService _passwordCheckerService;
         private readonly SaveService _saveService;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(SaveService saveService, IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService) : base(userService)
+        public AccountController(SaveService saveService, IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService, ILogger<AccountController> logger) : base(userService)
         {
             _userService = userService;
             _settingsService = settingsService;
             _passwordCheckerService = passwordCheckerService;
             _saveService = saveService;
+            _logger = logger;
         }
 
         public IActionResult Index() => RedirectToAction(nameof(Saves));
@@ -159,8 +161,10 @@ namespace RomsBrowse.Web.Controllers
 
                 if (await _userService.Create(model.Username, model.Password1))
                 {
+                    _logger.LogInformation("User {Username} registered", model.Username);
                     if (createAsAdmin)
                     {
+                        _logger.LogInformation("User {Username} elevated to administrator using setup admin token", model.Username);
                         await _userService.SetFlags(model.Username, UserFlags.Admin);
                         _settingsService.Delete(SettingsService.KnownSettings.AdminToken);
                         ViewData["HasAdmin"] = true;
@@ -175,6 +179,7 @@ namespace RomsBrowse.Web.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "User creation failed");
                 SetErrorMessage(ex);
                 return View(model);
             }
@@ -250,9 +255,11 @@ namespace RomsBrowse.Web.Controllers
             var verify = await _userService.VerifyAccount(model.Username, model.Password);
             if (!verify.IsValid)
             {
+                _logger.LogInformation("Invalid login attempt using username {Username}", model.Username);
                 SetErrorMessage("Invalid username or password");
                 return View(model);
             }
+            _logger.LogInformation("User {Username} logged on", verify.User.Username);
             await _userService.Ping(verify.User.Username);
             await HttpContext.SignInAsync(_userService.GetPrincipal(verify.User));
             return RedirectBack();
