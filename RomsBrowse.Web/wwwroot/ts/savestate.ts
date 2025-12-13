@@ -1,8 +1,8 @@
-"use strict";
+﻿"use strict";
 
 type SaveStateParam = {
-    screenshot: Uint8Array,
-    state: Uint8Array
+    screenshot: Uint8Array<ArrayBuffer>,
+    state: Uint8Array<ArrayBuffer>
 };
 
 namespace SaveState {

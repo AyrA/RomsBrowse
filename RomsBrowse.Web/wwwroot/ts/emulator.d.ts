@@ -1,4 +1,4 @@
-/** Loads EmulatorJS emulator engine */
+﻿/** Loads EmulatorJS emulator engine */
 declare function loadEmulator(): Promise<void>;
 declare function setEmulatorInitValues(): void;
 
@@ -18,10 +18,10 @@ type EmulatorGameManager = {
     FS: EmulatorFileSystem;
     functions: EmulatorGameFunctions;
     reset: () => void;
-    getSaveFile: () => Promise<Uint8Array | null>;
+    getSaveFile: () => Promise<Uint8Array<ArrayBuffer> | null>;
     getSaveFilePath: () => string | null;
     loadSaveFiles: () => void;
-    screenshot: () => Promise<Uint8Array | null>;
+    screenshot: () => Promise<Uint8Array<ArrayBuffer> | null>;
 };
 
 type EmulatorGameFunctions = {

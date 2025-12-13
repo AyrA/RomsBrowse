@@ -6,7 +6,7 @@ namespace EmulatorInterop {
      * Export current screen as PNG
      * @returns Screen data, or null if no screen ready
      */
-    export function getScreenshot(): Promise<Uint8Array | null> {
+    export function getScreenshot(): Promise<Uint8Array<ArrayBuffer> | null> {
         return EJS_emulator.gameManager.screenshot();
     }
 
@@ -14,7 +14,7 @@ namespace EmulatorInterop {
      * Gets SRAM data from the emulator
      * @returns SRAM data, or null if game or system has no SRAM
      */
-    export function getSRAM(): Promise<Uint8Array | null> {
+    export function getSRAM(): Promise<Uint8Array<ArrayBuffer> | null> {
         return EJS_emulator.gameManager.getSaveFile();
     }
 
