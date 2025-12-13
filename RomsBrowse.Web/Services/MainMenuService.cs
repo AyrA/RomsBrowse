@@ -14,9 +14,8 @@ public class MainMenuService
 
     public void SetMenuItems(IEnumerable<Platform> platforms, PlatformCountModel[] romCounts)
     {
-        Platforms = platforms
+        Platforms = [.. platforms
             .OrderBy(m => m.DisplayName)
-            .Select(m => new PlatformMenuModel(m.DisplayName, m.Id, romCounts.FirstOrDefault(n => n.PlatformId == m.Id)?.RomCount ?? 0))
-            .ToArray();
+            .Select(m => new PlatformMenuModel(m.DisplayName, m.Id, romCounts.FirstOrDefault(n => n.PlatformId == m.Id)?.RomCount ?? 0))];
     }
 }

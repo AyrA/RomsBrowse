@@ -1,14 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text;
+using Microsoft.AspNetCore.Mvc;
 using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
-using System.Text;
 
 namespace RomsBrowse.Web.Controllers;
 
 public class RomController(UserService userService, RomSearchService searchService, SettingsService settingsService, SaveService saveStateService, EmulatorCachingService emuCache) : BaseController(userService)
 {
     [Route("{controller}/{action}/{id}/{fileName}")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "ASP0018:Unused route parameter", Justification = "Try removing those \"unnecessary\" values and see how unnecessary they are")]
     public async Task<IActionResult> Get(int id, string fileName)
     {
         if (!CanPlay())

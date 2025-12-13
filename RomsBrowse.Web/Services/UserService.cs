@@ -313,7 +313,7 @@ public class UserService(ApplicationContext ctx, IMemoryCache cache, IPasswordCh
         var vm = new AccountsViewModel
         {
             Paging = new(page, (int)Math.Ceiling(users.Count / (double)pageSize), 2),
-            Accounts = users.Select(m => new AccountViewModel(m)).ToArray()
+            Accounts = [.. users.Select(m => new AccountViewModel(m))]
         };
         return vm;
     }

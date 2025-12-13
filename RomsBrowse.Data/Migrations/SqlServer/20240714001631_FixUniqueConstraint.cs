@@ -17,7 +17,7 @@ public partial class FixUniqueConstraint : Migration
         migrationBuilder.CreateIndex(
             name: "IX_SaveData_UserId_RomFileId_Flags",
             table: "SaveData",
-            columns: new[] { "UserId", "RomFileId", "Flags" },
+            columns: ["UserId", "RomFileId", "Flags"],
             unique: true);
     }
 
@@ -31,7 +31,7 @@ public partial class FixUniqueConstraint : Migration
         migrationBuilder.CreateIndex(
             name: "IX_SaveData_UserId_RomFileId",
             table: "SaveData",
-            columns: new[] { "UserId", "RomFileId" },
+            columns: ["UserId", "RomFileId"],
             unique: true);
     }
 }

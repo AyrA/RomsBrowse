@@ -17,7 +17,7 @@ public class EmulatorCachingService(IHostEnvironment env, ILogger<EmulatorCachin
     {
         //If a progress is already ongoing,
         //don't block the next call
-        if (!semaphoreSlim.Wait(0))
+        if (!semaphoreSlim.Wait(0, CancellationToken.None))
         {
             return false;
         }
@@ -55,6 +55,7 @@ public class EmulatorCachingService(IHostEnvironment env, ILogger<EmulatorCachin
         catch (Exception ex)
         {
             logger.LogError(ex, "Emulator download failed");
+            return false;
         }
         finally
         {

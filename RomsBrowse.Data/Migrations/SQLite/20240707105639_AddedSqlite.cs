@@ -141,7 +141,7 @@ public partial class AddedSqlite : Migration
         migrationBuilder.CreateIndex(
             name: "IX_SaveData_UserId_RomFileId",
             table: "SaveData",
-            columns: new[] { "UserId", "RomFileId" },
+            columns: ["UserId", "RomFileId"],
             unique: true);
 
         migrationBuilder.CreateIndex(

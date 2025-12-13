@@ -40,8 +40,6 @@ public class PlatformService(ApplicationContext ctx)
             .GroupBy(m => m.PlatformId)
             .Select(m => new { Platform = m.Key, RomCount = m.Count() })
             .ToArrayAsync();
-        return counts
-            .Select(m => new PlatformCountModel(m.Platform, m.RomCount))
-            .ToArray();
+        return [.. counts.Select(m => new PlatformCountModel(m.Platform, m.RomCount))];
     }
 }

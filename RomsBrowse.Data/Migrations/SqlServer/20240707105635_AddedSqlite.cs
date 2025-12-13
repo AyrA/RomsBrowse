@@ -17,7 +17,7 @@ public partial class AddedSqlite : Migration
         migrationBuilder.AddPrimaryKey(
             name: "PK_SaveData",
             table: "SaveData",
-            columns: new[] { "UserId", "RomFileId", "Flags" });
+            columns: ["UserId", "RomFileId", "Flags"]);
     }
 
     /// <inheritdoc />
@@ -30,6 +30,6 @@ public partial class AddedSqlite : Migration
         migrationBuilder.AddPrimaryKey(
             name: "PK_SaveData",
             table: "SaveData",
-            columns: new[] { "UserId", "RomFileId" });
+            columns: ["UserId", "RomFileId"]);
     }
 }
