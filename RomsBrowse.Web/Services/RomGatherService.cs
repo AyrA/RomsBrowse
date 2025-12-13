@@ -1,11 +1,11 @@
-﻿using AyrA.AutoDI;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
 using RomsBrowse.Web.Extensions;
 using RomsBrowse.Web.ServiceModels;
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
 
 namespace RomsBrowse.Web.Services;
 
@@ -18,9 +18,6 @@ public class RomGatherService(IServiceProvider provider, ILogger<RomGatherServic
     private CancellationTokenSource? cts = null;
 
     public bool IsScanning => t != null || cts != null;
-
-    //[MemberNotNullWhen(true, nameof(rootDir))]
-    //private bool HasRootDir => !string.IsNullOrWhiteSpace(rootDir);
 
     public void Scan()
     {
@@ -92,6 +89,7 @@ public class RomGatherService(IServiceProvider provider, ILogger<RomGatherServic
         }
     }
 
+    [MemberNotNull(nameof(cts))]
     private void CheckAbort()
     {
         var token = cts?.Token

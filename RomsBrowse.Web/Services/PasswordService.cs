@@ -1,6 +1,6 @@
-﻿using AyrA.AutoDI;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
+using AyrA.AutoDI;
 
 namespace RomsBrowse.Web.Services;
 
@@ -9,7 +9,7 @@ public class PasswordService
 {
     private record VersionInfo(int Iterations, HashAlgorithmName HashAlgorithm, int SaltLength, int DataSize);
     //Always leave a few cores unused if possible to prevent DoS of the entire service
-    private readonly SemaphoreSlim _lock = new(Math.Min(1, Environment.ProcessorCount - 2));
+    private readonly SemaphoreSlim _lock = new(Math.Max(1, Environment.ProcessorCount - 2));
 
     private const int CurrentVersion = 1;
     private readonly Dictionary<int, VersionInfo> versions = new()

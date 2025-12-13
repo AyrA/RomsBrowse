@@ -1,4 +1,6 @@
-﻿using AyrA.AutoDI;
+﻿using System.Security.Claims;
+using System.Text;
+using AyrA.AutoDI;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -8,9 +10,6 @@ using RomsBrowse.Data.Enums;
 using RomsBrowse.Data.Models;
 using RomsBrowse.Web.ServiceModels;
 using RomsBrowse.Web.ViewModels;
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Claims;
-using System.Text;
 
 namespace RomsBrowse.Web.Services;
 
@@ -415,19 +414,6 @@ public class UserService(ApplicationContext ctx, IMemoryCache cache, IPasswordCh
             user.IsLocked = false;
         }
         await SaveChanges(user);
-    }
-
-    private bool IsTracked([NotNullWhen(true)] User? user)
-    {
-        if (user == null)
-        {
-            return false;
-        }
-        if (user.Id != 0)
-        {
-            return ctx.ChangeTracker.Entries<User>().Any(m => m.Entity.Id == user.Id);
-        }
-        return ctx.ChangeTracker.Entries<User>().Any(m => m.Entity.Username == user.Username);
     }
 
     private User? GetTracked(User? user)

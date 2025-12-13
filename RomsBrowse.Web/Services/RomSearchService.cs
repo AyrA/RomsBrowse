@@ -1,9 +1,9 @@
-﻿using AyrA.AutoDI;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
+using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
 using RomsBrowse.Data;
 using RomsBrowse.Data.Models;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 namespace RomsBrowse.Web.Services;
 
@@ -40,15 +40,6 @@ public partial class RomSearchService(SettingsService ss, ApplicationContext ctx
             .OrderBy(m => m.DisplayName)
             .Take(ResultLimit)
             .ToArrayAsync();
-        /*
-        return await ctx.RomFiles
-            .Include(m => m.Platform)
-            .Where(m => EF.Functions.FreeText(m.DisplayName, terms))
-            .AsNoTracking()
-            .OrderBy(m => m.DisplayName)
-            .Take(ResultLimit)
-            .ToArrayAsync();
-        //*/
     }
 
     public async Task<RomFile[]> Search(string terms, int platformId)
@@ -108,7 +99,10 @@ public partial class RomSearchService(SettingsService ss, ApplicationContext ctx
         //Replace SQL search values with spaces
         term = SqlReplacer().Replace(term, " ");
         //Split on spaces
-        var terms = WhitespaceSplitter().Split(term).Select(m => m.Trim());
+        var terms = WhitespaceSplitter()
+            .Split(term)
+            .Select(m => m.Trim())
+            .Distinct(StringComparer.InvariantCultureIgnoreCase);
         //Join with SQL "AND" value
         term = string.Join("&", terms);
 
