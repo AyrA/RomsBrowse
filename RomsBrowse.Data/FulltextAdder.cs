@@ -2,6 +2,9 @@
 
 namespace RomsBrowse.Data;
 
+/// <summary>
+/// Adds or removes MS SQL fulltext indexes
+/// </summary>
 internal static class FulltextAdder
 {
     public static void AddFulltext(MigrationBuilder builder)

@@ -41,9 +41,9 @@ internal class ServiceRegistration
                 _ => throw new NotImplementedException($"Unknown db type: {settings.DbProvider}"),
             };
         }
-        //Return blank context if not settings have been made.
+        //Return blank context if no settings have been made.
         //This will crash services that are not aware of it,
-        //But the user is locked to the init controller, which is aware.
+        //but the user is usually locked to the init controller, which is aware.
         return new SqlServerTestContext(new DbContextOptions<SqlServerTestContext>(), ctxService);
     }
 }

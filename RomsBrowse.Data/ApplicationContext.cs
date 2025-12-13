@@ -21,8 +21,19 @@ public abstract class ApplicationContext(DbContextOptions opt, DbContextSettings
 
     public DbSet<User> Users { get; set; }
 
+    /// <summary>
+    /// Resets table indexes back to the initial value
+    /// </summary>
+    /// <typeparam name="T">Table model</typeparam>
+    /// <returns>True if successfully reset</returns>
+    /// <remarks>This should never be called if table <typeparamref name="T"/> is not empty</remarks>
     public abstract bool ResetIndex<T>();
 
+    /// <summary>
+    /// Searches for ROMs using a database specific mechanism
+    /// </summary>
+    /// <param name="text">Text to search</param>
+    /// <returns>Query with search filter applied</returns>
     public abstract IQueryable<RomFile> SearchRoms(string text);
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
