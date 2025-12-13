@@ -2,25 +2,24 @@
 
 #nullable disable
 
-namespace RomsBrowse.Data.Migrations
+namespace RomsBrowse.Data.Migrations;
+
+/// <inheritdoc />
+public partial class UserFlags : Migration
 {
     /// <inheritdoc />
-    public partial class UserFlags : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.AddColumn<int>(
-                name: "Flags",
-                table: "Users",
-                type: "int",
-                nullable: false);
-        }
+        migrationBuilder.AddColumn<int>(
+            name: "Flags",
+            table: "Users",
+            type: "int",
+            nullable: false);
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropColumn("Flags", "Users");
-        }
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropColumn("Flags", "Users");
     }
 }

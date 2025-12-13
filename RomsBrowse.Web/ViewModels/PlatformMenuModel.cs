@@ -1,4 +1,3 @@
-﻿namespace RomsBrowse.Web.ViewModels
-{
-    public record PlatformMenuModel(string DisplayName, int Id, int RomCount);
-}
+﻿namespace RomsBrowse.Web.ViewModels;
+
+public record PlatformMenuModel(string DisplayName, int Id, int RomCount);

@@ -2,37 +2,36 @@
 
 #nullable disable
 
-namespace RomsBrowse.Data.Migrations
+namespace RomsBrowse.Data.Migrations;
+
+/// <inheritdoc />
+public partial class RenameUserField : Migration
 {
     /// <inheritdoc />
-    public partial class RenameUserField : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.RenameColumn(
-                name: "LastLogin",
-                table: "Users",
-                newName: "LastActivity");
+        migrationBuilder.RenameColumn(
+            name: "LastLogin",
+            table: "Users",
+            newName: "LastActivity");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_Users_LastLogin",
-                table: "Users",
-                newName: "IX_Users_LastActivity");
-        }
+        migrationBuilder.RenameIndex(
+            name: "IX_Users_LastLogin",
+            table: "Users",
+            newName: "IX_Users_LastActivity");
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.RenameColumn(
-                name: "LastActivity",
-                table: "Users",
-                newName: "LastLogin");
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.RenameColumn(
+            name: "LastActivity",
+            table: "Users",
+            newName: "LastLogin");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_Users_LastActivity",
-                table: "Users",
-                newName: "IX_Users_LastLogin");
-        }
+        migrationBuilder.RenameIndex(
+            name: "IX_Users_LastActivity",
+            table: "Users",
+            newName: "IX_Users_LastLogin");
     }
 }

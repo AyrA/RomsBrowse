@@ -1,8 +1,7 @@
-﻿namespace RomsBrowse.Common.Services
+﻿namespace RomsBrowse.Common.Services;
+
+public interface ICompressionService
 {
-    public interface ICompressionService
-    {
-        byte[] Compress(byte[] data);
-        byte[] Decompress(byte[] data);
-    }
+    byte[] Compress(byte[] data);
+    byte[] Decompress(byte[] data);
 }

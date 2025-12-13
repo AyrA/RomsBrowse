@@ -2,35 +2,34 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace RomsBrowse.Data.Services
+namespace RomsBrowse.Data.Services;
+
+[AutoDIRegister(nameof(Register))]
+
+public class MemoryCacheProvider(IMemoryCache cache)
 {
-    [AutoDIRegister(nameof(Register))]
+    public IMemoryCache Cache => cache;
 
-    public class MemoryCacheProvider(IMemoryCache cache)
+    public void Purge()
     {
-        public IMemoryCache Cache => cache;
-
-        public void Purge()
+        if (cache is MemoryCache memoryCache)
         {
-            if (cache is MemoryCache memoryCache)
-            {
-                memoryCache.Clear();
-            }
-            else
-            {
-                throw new NotImplementedException($"Purge is not implemented for cache of type {cache.GetType().FullName}");
-            }
+            memoryCache.Clear();
         }
-
-        public static void Register(IServiceCollection services)
+        else
         {
-            services
-                .AddMemoryCache(opt =>
-                {
-                    opt.CompactionPercentage = 0.75;
-                    opt.SizeLimit = 512 * 1024 * 1024;
-                })
-                .AddSingleton<MemoryCacheProvider>();
+            throw new NotImplementedException($"Purge is not implemented for cache of type {cache.GetType().FullName}");
         }
+    }
+
+    public static void Register(IServiceCollection services)
+    {
+        services
+            .AddMemoryCache(opt =>
+            {
+                opt.CompactionPercentage = 0.75;
+                opt.SizeLimit = 512 * 1024 * 1024;
+            })
+            .AddSingleton<MemoryCacheProvider>();
     }
 }

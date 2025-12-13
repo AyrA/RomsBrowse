@@ -1,4 +1,3 @@
-﻿namespace RomsBrowse.Web.ServiceModels
-{
-    public record PlatformCountModel(int PlatformId, int RomCount);
-}
+﻿namespace RomsBrowse.Web.ServiceModels;
+
+public record PlatformCountModel(int PlatformId, int RomCount);

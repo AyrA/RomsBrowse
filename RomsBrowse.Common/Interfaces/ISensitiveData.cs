@@ -1,7 +1,6 @@
-﻿namespace RomsBrowse.Common.Interfaces
+﻿namespace RomsBrowse.Common.Interfaces;
+
+public interface ISensitiveData
 {
-    public interface ISensitiveData
-    {
-        void ClearSensitiveData();
-    }
+    void ClearSensitiveData();
 }

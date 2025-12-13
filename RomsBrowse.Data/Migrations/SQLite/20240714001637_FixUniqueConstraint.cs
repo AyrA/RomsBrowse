@@ -2,37 +2,36 @@
 
 #nullable disable
 
-namespace RomsBrowse.Data.Migrations.SQLite
+namespace RomsBrowse.Data.Migrations.SQLite;
+
+/// <inheritdoc />
+public partial class FixUniqueConstraint : Migration
 {
     /// <inheritdoc />
-    public partial class FixUniqueConstraint : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropIndex(
-                name: "IX_SaveData_UserId_RomFileId",
-                table: "SaveData");
+        migrationBuilder.DropIndex(
+            name: "IX_SaveData_UserId_RomFileId",
+            table: "SaveData");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_SaveData_UserId_RomFileId_Flags",
-                table: "SaveData",
-                columns: new[] { "UserId", "RomFileId", "Flags" },
-                unique: true);
-        }
+        migrationBuilder.CreateIndex(
+            name: "IX_SaveData_UserId_RomFileId_Flags",
+            table: "SaveData",
+            columns: new[] { "UserId", "RomFileId", "Flags" },
+            unique: true);
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropIndex(
-                name: "IX_SaveData_UserId_RomFileId_Flags",
-                table: "SaveData");
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropIndex(
+            name: "IX_SaveData_UserId_RomFileId_Flags",
+            table: "SaveData");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_SaveData_UserId_RomFileId",
-                table: "SaveData",
-                columns: new[] { "UserId", "RomFileId" },
-                unique: true);
-        }
+        migrationBuilder.CreateIndex(
+            name: "IX_SaveData_UserId_RomFileId",
+            table: "SaveData",
+            columns: new[] { "UserId", "RomFileId" },
+            unique: true);
     }
 }

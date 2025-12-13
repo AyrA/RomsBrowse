@@ -1,4 +1,3 @@
-﻿namespace RomsBrowse.Web.ServiceModels
-{
-    public record RomDirConfig(string ShortName, string DisplayName, string FolderName, string EmulatorType);
-}
+﻿namespace RomsBrowse.Web.ServiceModels;
+
+public record RomDirConfig(string ShortName, string DisplayName, string FolderName, string EmulatorType);

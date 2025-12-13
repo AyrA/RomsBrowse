@@ -5,121 +5,120 @@ using RomsBrowse.Data.Models;
 using RomsBrowse.Web.Extensions;
 using System.ComponentModel.DataAnnotations;
 
-namespace RomsBrowse.Web.ViewModels
+namespace RomsBrowse.Web.ViewModels;
+
+public class AccountViewModel : IValidateable, ISensitiveData
 {
-    public class AccountViewModel : IValidateable, ISensitiveData
+    private UserFlags flags;
+
+    public int Id { get; set; }
+
+    [Required, ValidUsername]
+    public string Username { get; set; }
+
+    [SafePassword]
+    public string? NewPassword1 { get; set; }
+
+    public string? NewPassword2 { get; set; }
+
+    public DateTime LastActivity { get; set; }
+
+    [ValidEnum]
+    public UserFlags Flags
     {
-        private UserFlags flags;
+        get => flags;
+        set => flags = value;
+    }
 
-        public int Id { get; set; }
-
-        [Required, ValidUsername]
-        public string Username { get; set; }
-
-        [SafePassword]
-        public string? NewPassword1 { get; set; }
-
-        public string? NewPassword2 { get; set; }
-
-        public DateTime LastActivity { get; set; }
-
-        [ValidEnum]
-        public UserFlags Flags
+    public bool IgnoreExpire
+    {
+        get
         {
-            get => flags;
-            set => flags = value;
+            return flags.HasFlag(UserFlags.NoExpireUser) || IsAdmin;
         }
-
-        public bool IgnoreExpire
+        set
         {
-            get
-            {
-                return flags.HasFlag(UserFlags.NoExpireUser) || IsAdmin;
-            }
-            set
-            {
-                flags.SetOrResetFlag(UserFlags.NoExpireUser, value);
-            }
+            flags.SetOrResetFlag(UserFlags.NoExpireUser, value);
         }
+    }
 
-        public bool IgnoreExpireSaves
+    public bool IgnoreExpireSaves
+    {
+        get
         {
-            get
-            {
-                return flags.HasFlag(UserFlags.NoExpireSaveState) || IsAdmin;
-            }
-            set
-            {
-                flags.SetOrResetFlag(UserFlags.NoExpireSaveState, value);
-            }
+            return flags.HasFlag(UserFlags.NoExpireSaveState) || IsAdmin;
         }
-
-        public bool IsAdmin
+        set
         {
-            get
-            {
-                return flags.HasFlag(UserFlags.Admin);
-            }
-            set
-            {
-                flags.SetOrResetFlag(UserFlags.Admin, value);
-            }
+            flags.SetOrResetFlag(UserFlags.NoExpireSaveState, value);
         }
+    }
 
-        public bool IsLocked
+    public bool IsAdmin
+    {
+        get
         {
-            get
-            {
-                return flags.HasFlag(UserFlags.Locked) && !IsAdmin;
-            }
-            set
-            {
-                flags.SetOrResetFlag(UserFlags.Locked, value);
-            }
+            return flags.HasFlag(UserFlags.Admin);
         }
-
-        public AccountViewModel()
+        set
         {
-            Id = 0;
-            Username = string.Empty;
-            LastActivity = DateTime.UtcNow;
-            Flags = UserFlags.Normal;
+            flags.SetOrResetFlag(UserFlags.Admin, value);
         }
+    }
 
-        public AccountViewModel(User u)
+    public bool IsLocked
+    {
+        get
         {
-            Id = u.Id;
-            Username = u.Username;
-            LastActivity = u.LastActivity;
-            Flags = u.Flags;
+            return flags.HasFlag(UserFlags.Locked) && !IsAdmin;
         }
-
-        public void Validate()
+        set
         {
-            ValidationTools.ValidatePublic(this);
-            if (Id < 1)
+            flags.SetOrResetFlag(UserFlags.Locked, value);
+        }
+    }
+
+    public AccountViewModel()
+    {
+        Id = 0;
+        Username = string.Empty;
+        LastActivity = DateTime.UtcNow;
+        Flags = UserFlags.Normal;
+    }
+
+    public AccountViewModel(User u)
+    {
+        Id = u.Id;
+        Username = u.Username;
+        LastActivity = u.LastActivity;
+        Flags = u.Flags;
+    }
+
+    public void Validate()
+    {
+        ValidationTools.ValidatePublic(this);
+        if (Id < 1)
+        {
+            if (string.IsNullOrEmpty(NewPassword1))
             {
-                if (string.IsNullOrEmpty(NewPassword1))
-                {
-                    throw new Common.Validation.ValidationException(nameof(NewPassword1), "Password cannot be empty");
-                }
-                if (string.IsNullOrEmpty(NewPassword2))
-                {
-                    throw new Common.Validation.ValidationException(nameof(NewPassword2), "Password confirmation cannot be empty");
-                }
+                throw new Common.Validation.ValidationException(nameof(NewPassword1), "Password cannot be empty");
             }
-            if (!string.IsNullOrEmpty(NewPassword1) && !string.IsNullOrEmpty(NewPassword2))
+            if (string.IsNullOrEmpty(NewPassword2))
             {
-                if (NewPassword1 != NewPassword2)
-                {
-                    throw new Common.Validation.ValidationException(nameof(NewPassword2), "Passwords do not match");
-                }
+                throw new Common.Validation.ValidationException(nameof(NewPassword2), "Password confirmation cannot be empty");
             }
         }
-
-        public void ClearSensitiveData()
+        if (!string.IsNullOrEmpty(NewPassword1) && !string.IsNullOrEmpty(NewPassword2))
         {
-            NewPassword1 = NewPassword2 = null;
+            if (NewPassword1 != NewPassword2)
+            {
+                throw new Common.Validation.ValidationException(nameof(NewPassword2), "Passwords do not match");
+            }
         }
+    }
+
+    public void ClearSensitiveData()
+    {
+        NewPassword1 = NewPassword2 = null;
     }
 }

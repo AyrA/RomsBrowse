@@ -3,20 +3,20 @@ using RomsBrowse.Common.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace RomsBrowse.Data.Models
-{
+namespace RomsBrowse.Data.Models;
+
 #nullable disable
-    public class Setting : IValidateable
+public class Setting : IValidateable
+{
+    [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None), StringLength(20)]
+    public string Name { get; set; }
+
+    public string Value { get; set; }
+
+    public void Validate()
     {
-        [Key, Required, DatabaseGenerated(DatabaseGeneratedOption.None), StringLength(20)]
-        public string Name { get; set; }
-
-        public string Value { get; set; }
-
-        public void Validate()
-        {
-            ValidationTools.ValidatePublic(this);
-        }
+        ValidationTools.ValidatePublic(this);
     }
-#nullable restore
 }
+#nullable restore
+

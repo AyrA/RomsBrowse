@@ -1,7 +1,6 @@
-﻿namespace RomsBrowse.Common.Validation
+﻿namespace RomsBrowse.Common.Validation;
+
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public class SafePasswordAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-    public class SafePasswordAttribute : Attribute
-    {
-    }
 }

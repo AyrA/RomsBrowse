@@ -1,4 +1,3 @@
-﻿namespace RomsBrowse.Web.ViewModels
-{
-    public record FolderBrowseViewModel(string? Folder);
-}
+﻿namespace RomsBrowse.Web.ViewModels;
+
+public record FolderBrowseViewModel(string? Folder);

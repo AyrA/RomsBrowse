@@ -5,277 +5,276 @@ using RomsBrowse.Data.Enums;
 using RomsBrowse.Web.Services;
 using RomsBrowse.Web.ViewModels;
 
-namespace RomsBrowse.Web.Controllers
+namespace RomsBrowse.Web.Controllers;
+
+public class AccountController : BaseController
 {
-    public class AccountController : BaseController
+    private static readonly SemaphoreSlim _registerLock = new(1);
+
+    private readonly UserService _userService;
+    private readonly SettingsService _settingsService;
+    private readonly IPasswordCheckerService _passwordCheckerService;
+    private readonly SaveService _saveService;
+    private readonly ILogger<AccountController> _logger;
+
+    public AccountController(SaveService saveService, IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService, ILogger<AccountController> logger) : base(userService)
     {
-        private static readonly SemaphoreSlim _registerLock = new(1);
+        _userService = userService;
+        _settingsService = settingsService;
+        _passwordCheckerService = passwordCheckerService;
+        _saveService = saveService;
+        _logger = logger;
+    }
 
-        private readonly UserService _userService;
-        private readonly SettingsService _settingsService;
-        private readonly IPasswordCheckerService _passwordCheckerService;
-        private readonly SaveService _saveService;
-        private readonly ILogger<AccountController> _logger;
+    public IActionResult Index() => RedirectToAction(nameof(Saves));
 
-        public AccountController(SaveService saveService, IPasswordCheckerService passwordCheckerService, UserService userService, SettingsService settingsService, ILogger<AccountController> logger) : base(userService)
+    public async Task<IActionResult> Saves()
+    {
+        var vm = await _saveService.GetSaves(UserName!);
+        var maxSaves = _settingsService.GetValue<int>(SettingsService.KnownSettings.MaxSaveStatesPerUser);
+        var maxAge = _settingsService.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration).Days;
+
+        vm.MaxSaves = maxSaves;
+        vm.DeleteDaysBack = maxAge;
+
+        return View(vm);
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetTimer(SaveOperationViewModel model)
+    {
+        try
         {
-            _userService = userService;
-            _settingsService = settingsService;
-            _passwordCheckerService = passwordCheckerService;
-            _saveService = saveService;
-            _logger = logger;
+            await _saveService.ResetTimer(model.Id, UserName!, model.Type);
+            SetRedirectMessage($"{model.Type} expiration timer was reset", true);
         }
-
-        public IActionResult Index() => RedirectToAction(nameof(Saves));
-
-        public async Task<IActionResult> Saves()
+        catch (Exception ex)
         {
-            var vm = await _saveService.GetSaves(UserName!);
-            var maxSaves = _settingsService.GetValue<int>(SettingsService.KnownSettings.MaxSaveStatesPerUser);
-            var maxAge = _settingsService.GetValue<TimeSpan>(SettingsService.KnownSettings.SaveStateExpiration).Days;
-
-            vm.MaxSaves = maxSaves;
-            vm.DeleteDaysBack = maxAge;
-
-            return View(vm);
+            SetRedirectMessage(ex);
         }
+        return RedirectToAction(nameof(Saves));
+    }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetTimer(SaveOperationViewModel model)
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteSave(SaveOperationViewModel model)
+    {
+        try
         {
-            try
-            {
-                await _saveService.ResetTimer(model.Id, UserName!, model.Type);
-                SetRedirectMessage($"{model.Type} expiration timer was reset", true);
-            }
-            catch (Exception ex)
-            {
-                SetRedirectMessage(ex);
-            }
-            return RedirectToAction(nameof(Saves));
+            await _saveService.Delete(model.Id, UserName!, model.Type);
+            SetRedirectMessage($"{model.Type} was deleted", true);
         }
-
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteSave(SaveOperationViewModel model)
+        catch (Exception ex)
         {
-            try
-            {
-                await _saveService.Delete(model.Id, UserName!, model.Type);
-                SetRedirectMessage($"{model.Type} was deleted", true);
-            }
-            catch (Exception ex)
-            {
-                SetRedirectMessage(ex);
-            }
-            return RedirectToAction(nameof(Saves));
+            SetRedirectMessage(ex);
         }
+        return RedirectToAction(nameof(Saves));
+    }
 
-        [HttpGet]
-        public async Task<IActionResult> Register()
+    [HttpGet]
+    public async Task<IActionResult> Register()
+    {
+        if (IsLoggedIn)
         {
-            if (IsLoggedIn)
-            {
-                return RedirectBack();
-            }
-            if (!await CanCreateAccount())
-            {
-                return View("RegisterDisabled");
-            }
-            var vm = new RegisterViewModel()
-            {
-                HasAdmin = await _userService.HasAdmin()
-            };
+            return RedirectBack();
+        }
+        if (!await CanCreateAccount())
+        {
+            return View("RegisterDisabled");
+        }
+        var vm = new RegisterViewModel()
+        {
+            HasAdmin = await _userService.HasAdmin()
+        };
 #if DEBUG
-            //During debug mode, add the token
-            //so we don't have to consult the db every time during testing
-            if (!vm.HasAdmin)
-            {
-                if (Guid.TryParse(_settingsService.GetRawValue(SettingsService.KnownSettings.AdminToken), out var adminToken))
-                {
-                    vm.AdminToken = adminToken;
-                }
-            }
-#endif
-            return View(vm);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        //During debug mode, add the token
+        //so we don't have to consult the db every time during testing
+        if (!vm.HasAdmin)
         {
-            if (IsLoggedIn)
+            if (Guid.TryParse(_settingsService.GetRawValue(SettingsService.KnownSettings.AdminToken), out var adminToken))
             {
-                return RedirectBack();
+                vm.AdminToken = adminToken;
             }
-            if (!await CanCreateAccount())
+        }
+#endif
+        return View(vm);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (IsLoggedIn)
+        {
+            return RedirectBack();
+        }
+        if (!await CanCreateAccount())
+        {
+            return View("RegisterDisabled");
+        }
+        model.UserCreated = false;
+        model.HasAdmin = await _userService.HasAdmin();
+        try
+        {
+            model.Validate();
+        }
+        catch (Exception ex)
+        {
+            SetErrorMessage(ex);
+            return View(model);
+        }
+        try
+        {
+            await _registerLock.WaitAsync();
+
+            if (await _userService.Exists(model.Username))
             {
-                return View("RegisterDisabled");
-            }
-            model.UserCreated = false;
-            model.HasAdmin = await _userService.HasAdmin();
-            try
-            {
-                model.Validate();
-            }
-            catch (Exception ex)
-            {
-                SetErrorMessage(ex);
+                SetErrorMessage("User already exists");
                 return View(model);
             }
-            try
+
+            //Handle AdminToken
+            bool createAsAdmin = false;
+            if (model.AdminToken.HasValue)
             {
-                await _registerLock.WaitAsync();
-
-                if (await _userService.Exists(model.Username))
+                if (_settingsService.TryGetSettingRaw(SettingsService.KnownSettings.AdminToken, out string? token) && token != null)
                 {
-                    SetErrorMessage("User already exists");
-                    return View(model);
-                }
-
-                //Handle AdminToken
-                bool createAsAdmin = false;
-                if (model.AdminToken.HasValue)
-                {
-                    if (_settingsService.TryGetSettingRaw(SettingsService.KnownSettings.AdminToken, out string? token) && token != null)
+                    if (Guid.TryParse(token, out var parsed) && parsed == model.AdminToken.Value)
                     {
-                        if (Guid.TryParse(token, out var parsed) && parsed == model.AdminToken.Value)
-                        {
-                            createAsAdmin = true;
-                        }
-                        else
-                        {
-                            SetErrorMessage("Supplied token does not match");
-                            return View(model);
-                        }
+                        createAsAdmin = true;
                     }
                     else
                     {
-                        SetErrorMessage("Token does not exist");
+                        SetErrorMessage("Supplied token does not match");
                         return View(model);
                     }
                 }
-                if (!model.HasAdmin && !createAsAdmin)
-                {
-                    SetErrorMessage("Regular users can only be created after the first administrator has been created");
-                    return View(model);
-                }
-
-                if (await _userService.Create(model.Username, model.Password1))
-                {
-                    _logger.LogInformation("User {Username} registered", model.Username);
-                    if (createAsAdmin)
-                    {
-                        _logger.LogInformation("User {Username} elevated to administrator using setup admin token", model.Username);
-                        await _userService.SetFlags(model.Username, UserFlags.Admin);
-                        _settingsService.Delete(SettingsService.KnownSettings.AdminToken);
-                        ViewData["HasAdmin"] = true;
-                        model.HasAdmin = true;
-                    }
-                    model.UserCreated = true;
-                }
                 else
                 {
-                    throw new Exception("Failed to create user");
+                    SetErrorMessage("Token does not exist");
+                    return View(model);
                 }
             }
-            catch (Exception ex)
+            if (!model.HasAdmin && !createAsAdmin)
             {
-                _logger.LogError(ex, "User creation failed");
-                SetErrorMessage(ex);
+                SetErrorMessage("Regular users can only be created after the first administrator has been created");
                 return View(model);
             }
-            finally
-            {
-                _registerLock.Release();
-            }
-            return View(model);
-        }
 
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            if (!IsLoggedIn)
+            if (await _userService.Create(model.Username, model.Password1))
             {
-                return RedirectToLogin();
-            }
-            return View(new ChangePasswordViewModel());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
-        {
-            if (!IsLoggedIn)
-            {
-                return RedirectToLogin();
-            }
-            try
-            {
-                model.Validate();
-                var rating = _passwordCheckerService.RatePassword(model.NewPassword1, false);
-                if (!rating.IsSafe)
+                _logger.LogInformation("User {Username} registered", model.Username);
+                if (createAsAdmin)
                 {
-                    throw new Exception($"The password is not safe. Make sure it's at least {rating.MinLength} characters long and contains at least {rating.MinScore} items of the following list: lowercase, uppercase, digits, symbols");
+                    _logger.LogInformation("User {Username} elevated to administrator using setup admin token", model.Username);
+                    await _userService.SetFlags(model.Username, UserFlags.Admin);
+                    _settingsService.Delete(SettingsService.KnownSettings.AdminToken);
+                    ViewData["HasAdmin"] = true;
+                    model.HasAdmin = true;
                 }
-                await _userService.ChangePassword(UserName!, model.OldPassword, model.NewPassword1);
-                SetSuccessMessage("Password changed");
+                model.UserCreated = true;
             }
-            catch (Exception ex)
+            else
             {
-                SetErrorMessage(ex);
-                return View(model);
+                throw new Exception("Failed to create user");
             }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "User creation failed");
+            SetErrorMessage(ex);
             return View(model);
         }
-
-        [HttpGet]
-        public IActionResult Login()
+        finally
         {
-            if (IsLoggedIn)
-            {
-                return RedirectBack();
-            }
-            return View(new SignInViewModel() { RedirectUrl = ReturnUrl });
+            _registerLock.Release();
         }
+        return View(model);
+    }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(SignInViewModel model)
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        if (!IsLoggedIn)
         {
-            if (IsLoggedIn)
+            return RedirectToLogin();
+        }
+        return View(new ChangePasswordViewModel());
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!IsLoggedIn)
+        {
+            return RedirectToLogin();
+        }
+        try
+        {
+            model.Validate();
+            var rating = _passwordCheckerService.RatePassword(model.NewPassword1, false);
+            if (!rating.IsSafe)
             {
-                return RedirectBack();
+                throw new Exception($"The password is not safe. Make sure it's at least {rating.MinLength} characters long and contains at least {rating.MinScore} items of the following list: lowercase, uppercase, digits, symbols");
             }
-            try
-            {
-                model.Validate();
-            }
-            catch (Exception ex)
-            {
-                SetErrorMessage(ex);
-                return View();
-            }
-            var verify = await _userService.VerifyAccount(model.Username, model.Password);
-            if (!verify.IsValid)
-            {
-                _logger.LogInformation("Invalid login attempt using username {Username}", model.Username);
-                SetErrorMessage("Invalid username or password");
-                return View(model);
-            }
-            _logger.LogInformation("User {Username} logged on", verify.User.Username);
-            await _userService.Ping(verify.User.Username);
-            await HttpContext.SignInAsync(_userService.GetPrincipal(verify.User));
+            await _userService.ChangePassword(UserName!, model.OldPassword, model.NewPassword1);
+            SetSuccessMessage("Password changed");
+        }
+        catch (Exception ex)
+        {
+            SetErrorMessage(ex);
+            return View(model);
+        }
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult Login()
+    {
+        if (IsLoggedIn)
+        {
             return RedirectBack();
         }
+        return View(new SignInViewModel() { RedirectUrl = ReturnUrl });
+    }
 
-        [HttpPost, ValidateAntiForgeryToken]
-        public async Task<IActionResult> Logout()
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Login(SignInViewModel model)
+    {
+        if (IsLoggedIn)
         {
-            await HttpContext.SignOutAsync();
             return RedirectBack();
         }
-
-        private async Task<bool> CanCreateAccount()
+        try
         {
-            return _settingsService.GetValue<bool>(SettingsService.KnownSettings.AllowRegister)
-                || !await _userService.HasAdmin();
+            model.Validate();
         }
+        catch (Exception ex)
+        {
+            SetErrorMessage(ex);
+            return View();
+        }
+        var verify = await _userService.VerifyAccount(model.Username, model.Password);
+        if (!verify.IsValid)
+        {
+            _logger.LogInformation("Invalid login attempt using username {Username}", model.Username);
+            SetErrorMessage("Invalid username or password");
+            return View(model);
+        }
+        _logger.LogInformation("User {Username} logged on", verify.User.Username);
+        await _userService.Ping(verify.User.Username);
+        await HttpContext.SignInAsync(_userService.GetPrincipal(verify.User));
+        return RedirectBack();
+    }
+
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync();
+        return RedirectBack();
+    }
+
+    private async Task<bool> CanCreateAccount()
+    {
+        return _settingsService.GetValue<bool>(SettingsService.KnownSettings.AllowRegister)
+            || !await _userService.HasAdmin();
     }
 }

@@ -2,35 +2,34 @@
 
 #nullable disable
 
-namespace RomsBrowse.Data.Migrations.SqlServer
+namespace RomsBrowse.Data.Migrations.SqlServer;
+
+/// <inheritdoc />
+public partial class AddedSqlite : Migration
 {
     /// <inheritdoc />
-    public partial class AddedSqlite : Migration
+    protected override void Up(MigrationBuilder migrationBuilder)
     {
-        /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_SaveData",
-                table: "SaveData");
+        migrationBuilder.DropPrimaryKey(
+            name: "PK_SaveData",
+            table: "SaveData");
 
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_SaveData",
-                table: "SaveData",
-                columns: new[] { "UserId", "RomFileId", "Flags" });
-        }
+        migrationBuilder.AddPrimaryKey(
+            name: "PK_SaveData",
+            table: "SaveData",
+            columns: new[] { "UserId", "RomFileId", "Flags" });
+    }
 
-        /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_SaveData",
-                table: "SaveData");
+    /// <inheritdoc />
+    protected override void Down(MigrationBuilder migrationBuilder)
+    {
+        migrationBuilder.DropPrimaryKey(
+            name: "PK_SaveData",
+            table: "SaveData");
 
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_SaveData",
-                table: "SaveData",
-                columns: new[] { "UserId", "RomFileId" });
-        }
+        migrationBuilder.AddPrimaryKey(
+            name: "PK_SaveData",
+            table: "SaveData",
+            columns: new[] { "UserId", "RomFileId" });
     }
 }

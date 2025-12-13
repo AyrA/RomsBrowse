@@ -1,21 +1,20 @@
-﻿namespace RomsBrowse.Web.Extensions
+﻿namespace RomsBrowse.Web.Extensions;
+
+public static class EnumExtensions
 {
-    public static class EnumExtensions
+    public static T SetOrResetFlag<T>(this ref T enumValue, T flagValue, bool set) where T : struct, Enum
     {
-        public static T SetOrResetFlag<T>(this ref T enumValue, T flagValue, bool set) where T : struct, Enum
+        dynamic v = enumValue;
+        dynamic f = flagValue;
+        if (set)
         {
-            dynamic v = enumValue;
-            dynamic f = flagValue;
-            if (set)
-            {
-                v |= f;
-            }
-            else
-            {
-                v &= ~f;
-            }
-            enumValue = v;
-            return enumValue;
+            v |= f;
         }
+        else
+        {
+            v &= ~f;
+        }
+        enumValue = v;
+        return enumValue;
     }
 }

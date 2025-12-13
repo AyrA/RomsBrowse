@@ -1,8 +1,7 @@
-﻿namespace RomsBrowse.Common.Services
+﻿namespace RomsBrowse.Common.Services;
+
+public interface IEncryptionService
 {
-    public interface IEncryptionService
-    {
-        byte[] Decrypt(byte[] data);
-        byte[] Encrypt(byte[] data);
-    }
+    byte[] Decrypt(byte[] data);
+    byte[] Encrypt(byte[] data);
 }

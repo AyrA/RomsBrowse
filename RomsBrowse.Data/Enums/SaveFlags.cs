@@ -1,9 +1,8 @@
-﻿namespace RomsBrowse.Data.Enums
+﻿namespace RomsBrowse.Data.Enums;
+
+[Flags]
+public enum SaveFlags
 {
-    [Flags]
-    public enum SaveFlags
-    {
-        State = 1,
-        SRAM = 2
-    }
+    State = 1,
+    SRAM = 2
 }

@@ -1,10 +1,9 @@
-﻿namespace RomsBrowse.Common.Services
-{
-    public interface ITempEncryptionService : IEncryptionService
-    {
-    }
+﻿namespace RomsBrowse.Common.Services;
 
-    public interface IPermEncryptionService : IEncryptionService
-    {
-    }
+public interface ITempEncryptionService : IEncryptionService
+{
+}
+
+public interface IPermEncryptionService : IEncryptionService
+{
 }
