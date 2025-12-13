@@ -3,7 +3,3 @@
 public interface ITempEncryptionService : IEncryptionService
 {
 }
-
-public interface IPermEncryptionService : IEncryptionService
-{
-}

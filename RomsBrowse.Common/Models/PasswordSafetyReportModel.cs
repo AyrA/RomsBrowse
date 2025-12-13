@@ -2,6 +2,9 @@
 
 namespace RomsBrowse.Common.Models;
 
+/// <summary>
+/// Reports how safe a password is
+/// </summary>
 public partial class PasswordSafetyReportModel
 {
     public bool IsSafe => Score >= MinScore && Length >= MinLength;

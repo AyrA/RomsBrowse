@@ -1,11 +1,17 @@
-﻿using AyrA.AutoDI;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
+using AyrA.AutoDI;
 
 namespace RomsBrowse.Common.Services;
 
 [AutoDIRegister(AutoDIType.Transient, typeof(ITempEncryptionService))]
 public class TempEncryptionService : ITempEncryptionService
 {
+    /// <summary>
+    /// Randomly generated key
+    /// </summary>
+    /// <remarks>
+    /// This is generated again on every application start
+    /// </remarks>
     private static readonly byte[] key = RandomNumberGenerator.GetBytes(32);
     private static readonly int tagSize = AesGcm.TagByteSizes.MaxSize;
     private static readonly int nonceSize = AesGcm.NonceByteSizes.MaxSize;

@@ -2,6 +2,9 @@
 
 namespace RomsBrowse.Common.Interfaces;
 
+/// <summary>
+/// Represents a type that provides a generic validation function
+/// </summary>
 public interface IValidateable
 {
     /// <summary>
