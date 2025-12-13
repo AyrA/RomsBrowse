@@ -1,4 +1,5 @@
-﻿using AyrA.AutoDI;
+﻿using System.Diagnostics;
+using AyrA.AutoDI;
 using RomsBrowse.Data;
 
 namespace RomsBrowse.Web.Services;
@@ -31,6 +32,7 @@ public class PeriodicMaintenanceService(IServiceProvider provider, ILogger<Perio
 
     private void Callback(object? state)
     {
+        var sw = Stopwatch.StartNew();
         logger.LogInformation("Starting periodic maintenance");
         using var scope = provider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
@@ -78,5 +80,6 @@ public class PeriodicMaintenanceService(IServiceProvider provider, ILogger<Perio
         {
             logger.LogInformation("Application is not configured. Maintenance has been skipped.");
         }
+        logger.LogInformation("Ending periodic maintenance after {Duration}", sw.Elapsed);
     }
 }

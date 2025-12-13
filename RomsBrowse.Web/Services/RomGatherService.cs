@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using AyrA.AutoDI;
 using Microsoft.EntityFrameworkCore;
@@ -115,6 +116,8 @@ public class RomGatherService(IServiceProvider provider, ILogger<RomGatherServic
     /// </remarks>
     private void GatherRoms()
     {
+        var sw = Stopwatch.StartNew();
+        logger.LogInformation("Gathering ROM files");
         try
         {
             using var scope = provider.CreateScope();
@@ -181,6 +184,7 @@ public class RomGatherService(IServiceProvider provider, ILogger<RomGatherServic
             t = null;
             cts = null;
         }
+        logger.LogInformation("ROM gathering ended after {Duration}", sw.Elapsed);
     }
 
     private RomDirConfig[] GetConfig()
